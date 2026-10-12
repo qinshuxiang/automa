@@ -4,8 +4,8 @@
     "communities": "Cộng đồng"
   },
   "welcome": {
-    "title": "Chào mừng bạn đến với Automa! 🎉",
-    "text": "Bắt đầu bằng cách đọc tài liệu hoặc duyệt quy trình công việc trong Automa Marketplace.",
+    "title": "Chào mừng bạn đến với 自动化工具! 🎉",
+    "text": "Bắt đầu bằng cách đọc tài liệu hoặc duyệt quy trình công việc trong 自动化工具 Marketplace.",
     "marketplace": "Cửa hàng"
   },
   "packages": {
@@ -28,7 +28,7 @@
     "nextRun": "Lần chạy tiếp theo",
     "active": "Kích hoạt",
     "refresh": "Tải lại",
-    "schedule":{
+    "schedule": {
       "title": "Lịch trình",
       "types": {
         "everyDay": "Hằng ngày",
@@ -80,7 +80,7 @@
     }
   },
   "updateMessage": {
-    "text1": "Automa đã được cập nhật lên v{version},",
+    "text1": "自动化工具 đã được cập nhật lên v{version},",
     "text2": "xem có gì mới."
   },
   "workflows": {
@@ -91,13 +91,6 @@
       "rename": "Đổi tên thư mục"
     }
   },
-  "auth": {
-    "title": "Xác thực",
-    "signIn": "Đăng nhập",
-    "username": "Bạn cần đặt tên người dùng của mình trước",
-    "clickHere": "Bấm vào đây",
-    "text": "Bạn cần phải đăng nhập trước khi có thể làm điều đó"
-  },
   "running": {
     "start": "Bắt đầu vào {date}",
     "message": "Điều này chỉ hiển thị 5 bản ghi cuối cùng"
@@ -107,7 +100,7 @@
     "shortcuts": {
       "duplicate": "Lối tắt đã được sử dụng bởi \"{name}\""
     },
-     "editor": {
+    "editor": {
       "title": "Tiêu đề",
       "curvature": {
         "title": "Đường cong",
@@ -158,25 +151,6 @@
         "title": "Khôi phục quy trình làm việc",
         "button": "Khôi phục",
         "update": "Cập nhật nếu quy trình làm việc tồn tại"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "Cục bộ",
-          "cloud": "Đám mây"
-        },
-        "location": "Địa điểm",
-        "delete": "Xóa bản sao lưu",
-        "title": "Sao lưu dữ liệu đám mây",
-        "sync": "Đồng bộ",
-        "lastSync": "Lần đồng bộ cuối cùng",
-        "lastBackup": "Sao lưu cuối cùng",
-        "select": "Chọn quy trình làm việc",
-        "storedWorkflows": "Quy trình làm việc được lưu trữ trên đám mây",
-        "selected": "Đã chọn",
-        "selectText": "Chọn quy trình công việc mà bạn muốn sao lưu",
-        "selectAll": "Chọn tất cả",
-        "deselectAll": "Bỏ chọn tất cả",
-        "needSelectWorkflow": "Bạn cần chọn quy trình công việc mà bạn muốn sao lưu"
       }
     }
   },
@@ -197,7 +171,6 @@
     "browse": "Duyệt quy trình công việc",
     "name": "Tên quy trình",
     "rename": "Sửa tên quy trình",
-    "backupCloud": "Sao lưu quy trình công việc lên đám mây",
     "add": "Thêm quy trình",
     "clickToEnable": "Nhấn để kích hoạt",
     "toggleSidebar": "Chuyển đổi thanh bên",
@@ -222,20 +195,6 @@
       "or": "Hoặc",
       "topAwait": "Hỗ trợ chức năng chờ đợi cấp cao nhất và \"automaRefData \""
     },
-    "host": {
-      "title": "Lưu trữ quy trình làm việc",
-      "set": "Đặt làm quy trình làm việc trên máy chủ lưu trữ",
-      "id": "ID Máy chủ",
-      "add": "Thêm quy trình làm việc được lưu trữ",
-      "sync": {
-        "title": "Đồng bộ",
-        "description": "Đồng bộ hóa với quy trình làm việc trên máy chủ"
-      },
-      "messages": {
-        "hostExist": "Bạn đã thêm máy chủ này",
-        "notFound": "Không thể tìm thấy quy trình làm việc được lưu trữ với id \"{id} \""
-      }
-    },
     "type": {
       "local": "Cục bộ",
       "shared": "Được chia sẻ",
@@ -245,17 +204,6 @@
       "title": "Hủy xuất bản quy trình làm việc",
       "button": "Hủy xuất bản",
       "body": "Bạn có chắc chắn muốn hủy xuất bản quy trình làm việc \"{name} \" không?"
-    },
-    "share": {
-      "url": "Chia sẻ URL",
-      "publish": "Xuất bản",
-      "sharedAs": "Được chia sẻ với tên \"{name} \"",
-      "title": "Chia sẻ quy trình làm việc",
-      "download": "Thêm quy trình làm việc vào cục bộ",
-      "edit": "Chỉnh sửa Mô tả",
-      "fetchLocal": "Tìm nạp quy trình làm việc cục bộ",
-      "update": "Cập nhật",
-      "unpublish": "Hủy xuất bản"
     },
     "variables": {
       "title": "Biến | Danh sách biến",
@@ -307,7 +255,7 @@
       "notification": {
         "title": "Thông báo quy trình làm việc",
         "description": "Hiển thị trạng thái dòng công việc (thành công hay không thành công) sau khi nó được thực thi",
-        "noPermission": "Automa yêu cầu quyền \"thông báo \" để làm cho điều này hoạt động"
+        "noPermission": "自动化工具 yêu cầu quyền \"thông báo \" để làm cho điều này hoạt động"
       },
       "publicId": {
         "title": "ID công khai quy trình làm việc",
@@ -320,7 +268,7 @@
       },
       "autocomplete": {
         "title": "Tự động hoàn thành",
-        "description": "Bật tự động hoàn thành trong khối đầu vào (tắt nếu nó làm cho Automa không ổn định)"
+        "description": "Bật tự động hoàn thành trong khối đầu vào (tắt nếu nó làm cho 自动化工具 không ổn định)"
       },
       "clearCache": {
         "title": "Xóa bộ nhớ cache",
@@ -409,7 +357,7 @@
       "empty-spreadsheet-range": "Phạm vi bảng tính trống",
       "stop-timeout": "Quy trình đã bị dừng vì hết thời lượng thực thi",
       "invalid-proxy-host": "Máy chủ proxy không hợp lệ",
-      "no-file-access": "Automa không có quyền truy cập vào tệp ",
+      "no-file-access": "自动化工具 không có quyền truy cập vào tệp ",
       "no-workflow": "Không tìm thấy quy trình với ID \"{workflowId}\"",
       "no-match-tab": "Không thể tìm thấy tab có các mẫu \"{pattern} \"",
       "no-clipboard-acces": "Không có quyền truy cập khay nhớ tạm",

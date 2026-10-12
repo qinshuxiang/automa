@@ -15,7 +15,7 @@
         "selector": "Selettore elemento",
         "selectorOptions": "Opzioni del selettore",
         "timeout": "Timeout (millisecondi)",
-        "noPermission": "Automa non ha permessi sufficienti per eseguire questa azione",
+        "noPermission": "自动化工具 non ha permessi sufficienti per eseguire questa azione",
         "grantPermission": "Autorizza",
         "action": "Azione",
         "element": {
@@ -232,7 +232,7 @@
         "name": "Gestici download",
         "description": "Gestisci il file da scaricare",
         "timeout": "Timeout (millisecondi)",
-        "noPermission": "Automa non dispone del permesso per accedere ai download",
+        "noPermission": "自动化工具 non dispone del permesso per accedere ai download",
         "onConflict": "In caso di conflitto",
         "waitFile": "Attendi il download del file",
         "downloadId": "ID di download del file (opzionale)",
@@ -246,7 +246,7 @@
         "name": "Appunti",
         "description": "Ottieni il testo copiato dagli appunti",
         "data": "Dati degli appunti",
-        "noPermission": "Automa non dispone del permesso per accedere agli appunti",
+        "noPermission": "自动化工具 non dispone del permesso per accedere agli appunti",
         "grantPermission": "Autorizza",
         "copySelection": "Copia il testo selezionato sulla pagina",
         "types": {
@@ -281,7 +281,7 @@
         "addFile": "Aggiungi file",
         "onlyURL": "Nel browser Firefox è supportato solo il caricamento di file da un URL",
         "requirement": "Leggi i requisiti prima di usare questo blocco",
-        "noFileAccess": "Automa non ha accesso ai file"
+        "noFileAccess": "自动化工具 non ha accesso ai file"
       },
       "browser-event": {
         "name": "Evento browser",
@@ -348,7 +348,7 @@
           "targetWebsite": "Il Match Pattern del sito web in cui si trova l'elemento target (clicca per vedere più esempi di Match Pattern)",
           "baseEl": {
             "title": "Elemento base (opzionale)",
-            "description": "Automa ricomincerà ad osservare l'elemento target quando questo elemento cambia"
+            "description": "自动化工具 ricomincerà ad osservare l'elemento target quando questo elemento cambia"
           },
           "subtree": {
             "title": "Includi sottoalbero",
@@ -395,43 +395,6 @@
         "insertVars": "Inserisci le variabili del workflow corrente",
         "useCommas": "Usa le virgole per separare i nomi delle variabili",
         "insertAllGlobalData": "Utilizza tutto il flusso di lavoro corrente globalData"
-      },
-      "google-sheets": {
-        "name": "Google Sheets",
-        "description": "Leggi o aggiorna dati di Google Sheets",
-        "previewData": "Anteprima dei dati",
-        "firstRow": "Usa la prima riga come chiavi",
-        "keysAsFirstRow": "Usa le chiavi come prima riga",
-        "insertData": "Inserisci dati",
-        "valueInputOption": "Opzione di immissione del valore",
-        "insertDataOption": "Opzione di inserimento dati",
-        "rangeToSearch": "Intervallo da ricercare",
-        "dataFrom": {
-          "label": "Dati da",
-          "options": {
-            "data-columns": "Tabella",
-            "custom": "Personalizzato"
-          }
-        },
-        "refKey": {
-          "label": "Chiave di riferimento (opzionale)",
-          "placeholder": "Nome chiave"
-        },
-        "spreadsheetId": {
-          "label": "ID foglio di calcolo",
-          "link": "Scopri come ottenere l'ID del foglio di calcolo"
-        },
-        "range": {
-          "label": "Intervallo",
-          "link": "Clicca per vedere più esempi"
-        },
-        "select": {
-          "get": "Ottieni i valori delle celle",
-          "getRange": "Ottieni un intervallo",
-          "update": "Aggiorna i valori delle celle",
-          "append": "Aggiungi valori alle celle",
-          "clear": "Cancella i valori delle celle"
-        }
       },
       "active-tab": {
         "name": "Scheda attiva",
@@ -524,7 +487,6 @@
           "placeholder": "Dati da esportare",
           "options": {
             "data-columns": "Tabella",
-            "google-sheets": "Google Sheets",
             "variable": "Variabile"
           }
         }
@@ -742,7 +704,6 @@
             "data-columns": "Tabella",
             "table": "Tabella",
             "custom-data": "Dati personalizzati",
-            "google-sheets": "Google Sheets",
             "elements": "Elementi"
           }
         }

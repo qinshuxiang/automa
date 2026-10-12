@@ -4,9 +4,15 @@
     "communities": "Communities"
   },
   "welcome": {
-    "title": "Welcome to Automa! 🎉",
-    "text": "Get started by reading the documentation or browsing workflows in the Automa Marketplace.",
-    "marketplace": "Marketplace"
+    "title": "Welcome to 自动化工具 Offline",
+    "text": "Create a workflow or import a local workflow file to begin. Workflows and settings are stored in this browser.",
+    "stepsTitle": "Getting started",
+    "steps": [
+      "Create a workflow and connect the trigger to action blocks.",
+      "Open your target page, then run the workflow or record your actions.",
+      "Export a local backup of workflows, settings, tables and credentials."
+    ],
+    "environment": "Designed for UOS 20, ARM64 and Chromium 90. Automation may pause when the browser closes or freezes a page."
   },
   "packages": {
     "name": "Package | Packages",
@@ -29,7 +35,7 @@
     "nextRun": "Next run",
     "active": "Active",
     "refresh": "Refresh",
-    "schedule":{
+    "schedule": {
       "title": "Schedule",
       "types": {
         "everyDay": "Every day",
@@ -82,7 +88,7 @@
     }
   },
   "updateMessage": {
-    "text1": "Automa has been updated to v{version},",
+    "text1": "自动化工具 has been updated to v{version},",
     "text2": "see what's new."
   },
   "workflows": {
@@ -92,13 +98,6 @@
       "delete": "Delete folder",
       "rename": "Rename folder"
     }
-  },
-  "auth": {
-    "title": "Auth",
-    "signIn": "Sign in",
-    "username": "You need to set your username first",
-    "clickHere": "Click here",
-    "text": "You need to be signed in before you can do that"
   },
   "running": {
     "start": "Started on {date}",
@@ -166,26 +165,15 @@
         "title": "Restore workflows",
         "button": "Restore",
         "update": "Update if the workflow exists"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "Local",
-          "cloud": "Cloud"
-        },
-        "location": "Location",
-        "delete": "Delete backup",
-        "title": "Cloud Backup",
-        "sync": "Sync",
-        "lastSync": "Last sync",
-        "lastBackup": "Last backup",
-        "select": "Select workflows",
-        "storedWorkflows": "Workflows that are stored in the cloud",
-        "selected": "Selected",
-        "selectText": "Select workflows that you want to backup",
-        "selectAll": "Select all",
-        "deselectAll": "Deselect all",
-        "needSelectWorkflow": "You need to select workflows that you want to backup"
       }
+    },
+    "offlineAbout": {
+      "version": "Version: {version}",
+      "description": "自动化工具 Offline automates your browser by connecting blocks. Fill forms, record actions, capture screenshots and extract webpage data.",
+      "environment": "Designed for UOS 20 / ARM64 / Qianxin Chromium 90, using Manifest V2.",
+      "storage": "Work data is stored in this browser. Export backups regularly from Settings → Local backup so you can restore data if browser storage is deleted.",
+      "network": "The extension does not connect to cloud services. Workflows can access intranet pages and make requests you configure.",
+      "credits": "Based on the open-source 自动化工具 project. Source code and license are included in the offline distribution."
     }
   },
   "workflow": {
@@ -240,7 +228,6 @@
     "browse": "Browse workflows",
     "name": "Workflow name",
     "rename": "Rename workflow",
-    "backupCloud": "Backup workflow to cloud",
     "add": "Add workflow",
     "clickToEnable": "Click to enable",
     "toggleSidebar": "Toggle sidebar",
@@ -265,20 +252,6 @@
       "or": "OR",
       "topAwait": "Support top-level await and \"automaRefData\" function"
     },
-    "host": {
-      "title": "Host workflow",
-      "set": "Set as host workflow",
-      "id": "Host ID",
-      "add": "Add hosted workflow",
-      "sync": {
-        "title": "Sync",
-        "description": "Sync with host workflow"
-      },
-      "messages": {
-        "hostExist": "You have already added this host",
-        "notFound": "Can't find a hosted workflow with the ID \"{id}\""
-      }
-    },
     "type": {
       "local": "Local",
       "shared": "Shared",
@@ -288,17 +261,6 @@
       "title": "Unpublish workflow",
       "button": "Unpublish",
       "body": "Are you sure you want to unpublish the workflow \"{name}\"?"
-    },
-    "share": {
-      "url": "Share URL",
-      "publish": "Publish",
-      "sharedAs": "Shared as \"{name}\"",
-      "title": "Share workflow",
-      "download": "Save workflow to local",
-      "edit": "Edit description",
-      "fetchLocal": "Fetch local workflow",
-      "update": "Update",
-      "unpublish": "Unpublish"
     },
     "variables": {
       "title": "Variable | Variables",
@@ -363,7 +325,7 @@
       },
       "autocomplete": {
         "title": "Autocomplete",
-        "description": "Enable autocomplete in the input block (disable if it makes Automa unstable)"
+        "description": "Enable autocomplete in the input block (disable if it makes 自动化工具 unstable)"
       },
       "clearCache": {
         "title": "Clear cache",
@@ -456,7 +418,7 @@
       "active-tab-removed": "Workflow active tab was removed",
       "empty-spreadsheet-range": "Spreadsheet range is empty",
       "stop-timeout": "Workflow was stopped due to timeout",
-      "no-file-access": "Automa doesn't have access to the file",
+      "no-file-access": "自动化工具 doesn't have access to the file",
       "no-workflow": "Can't find a workflow with the ID \"{workflowId}\"",
       "no-match-tab": "Can't find a tab matching the pattern \"{pattern}\"",
       "no-clipboard-acces": "Don't have permission to access the clipboard",

@@ -4,9 +4,15 @@
     "communities": "社区"
   },
   "welcome": {
-    "title": "欢迎使用 Automa! 🎉",
-    "text": "从阅读文档或浏览 Automa 市场中的工作流开始.",
-    "marketplace": "市场"
+    "title": "欢迎使用 自动化工具 中文离线版",
+    "text": "从新建工作流或导入本地工作流文件开始。所有工作流及设置保存在当前浏览器中。",
+    "stepsTitle": "开始使用",
+    "steps": [
+      "新建工作流，连接触发器与操作模块。",
+      "打开目标网页，运行工作流或录制网页操作。",
+      "使用本地备份保存工作流、设置、表格及凭据。"
+    ],
+    "environment": "适用于 UOS 20、ARM64 及奇安信 Chromium 90。浏览器关闭或网页被冻结时，自动化任务可能暂停。"
   },
   "packages": {
     "name": "包 | 包",
@@ -45,7 +51,8 @@
       "createdAt": "创建于",
       "modifiedAt": "修改于",
       "rowsCount": "行数",
-      "delete": "删除表格"
+      "delete": "删除表格",
+      "edit": "编辑表格"
     }
   },
   "credential": {
@@ -76,12 +83,16 @@
       "description": "保存页面资产并重命名下载的文件"
     },
     "cookies": {
-      "title": "Cookies",
-      "description": "读取,设置,或移除 cookies"
+      "title": "Cookie",
+      "description": "读取、设置或移除 Cookie"
+    },
+    "clipboardRead": {
+      "title": "剪贴板",
+      "description": "访问剪贴板数据"
     }
   },
   "updateMessage": {
-    "text1": "Automa 已更新为 v{version},",
+    "text1": "自动化工具 已更新为 v{version},",
     "text2": "看看有什么新东西."
   },
   "workflows": {
@@ -91,13 +102,6 @@
       "delete": "删除文件夹",
       "rename": "重命名文件夹"
     }
-  },
-  "auth": {
-    "title": "作者",
-    "signIn": "登录",
-    "username": "您需要先设置您的用户名",
-    "clickHere": "点击这里",
-    "text": "您需要先登录才能执行此操作"
   },
   "running": {
     "start": "开始于 {date}",
@@ -123,6 +127,10 @@
       "snapGrid": {
         "title": "对齐网格",
         "description": "移动模块时对齐网格"
+      },
+      "saveWhenExecute": {
+        "title": "执行工作流时自动保存",
+        "description": "执行工作流时自动保存工作流更改"
       }
     },
     "deleteLog": {
@@ -161,26 +169,15 @@
         "title": "恢复工作流",
         "button": "恢复",
         "update": "如果工作流存在则更新"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "本地",
-          "cloud": "云端"
-        },
-        "location": "位置",
-        "delete": "删除备份",
-        "title": "云端备份",
-        "sync": "同步",
-        "lastSync": "上次同步",
-        "lastBackup": "上次备份",
-        "select": "选择工作流",
-        "storedWorkflows": "存储在云中的工作流",
-        "selected": "已选择",
-        "selectText": "选择要备份的工作流",
-        "selectAll": "选择全部",
-        "deselectAll": "取消全选",
-        "needSelectWorkflow": "您需要选择要备份的工作流"
       }
+    },
+    "offlineAbout": {
+      "version": "版本：{version}",
+      "description": "自动化工具 中文离线版通过连接模块实现浏览器自动化，支持填写表单、录制操作、截图和提取网页数据。",
+      "environment": "适配 UOS 20／ARM64／奇安信 Chromium 90，使用 Manifest V2。",
+      "storage": "工作数据保存在本地浏览器。请定期在“设置 → 本地备份”中导出备份；浏览器数据被删除后需要通过备份恢复。",
+      "network": "扩展本身不连接云端服务。工作流可以按照你的配置访问内网页面或发送请求。",
+      "credits": "基于开源 自动化工具 项目。源代码及许可证随离线发行包提供。"
     }
   },
   "workflow": {
@@ -195,7 +192,7 @@
           "title": "执行 JS 代码"
         },
         "http-request": {
-          "title": "HTTP Request"
+          "title": "HTTP 请求"
         }
       },
       "types": {
@@ -209,7 +206,7 @@
         }
       }
     },
-      "previewMode": {
+    "previewMode": {
       "title": "预览模式",
       "description": "正处于预览模式，你所做的修改不会被保存下来"
     },
@@ -235,7 +232,6 @@
     "browse": "浏览工作流",
     "name": "工作流名称",
     "rename": "重命名工作流",
-    "backupCloud": "备份工作流到云端",
     "add": "添加工作流",
     "clickToEnable": "单击启用",
     "toggleSidebar": "切换侧栏",
@@ -256,23 +252,9 @@
     "conditionBuilder": {
       "title": "条件生成器",
       "add": "附加条件",
-      "and": "AND",
-      "or": "OR",
-      "topAwait": "支持 top-level await 和\"automaRefData\"函数"
-    },
-    "host": {
-      "title": "主机工作流程",
-      "set": "设为主机工作流",
-      "id": "主机 Id",
-      "add": "添加托管工作流",
-      "sync": {
-        "title": "同步",
-        "description": "与主机工作流同步"
-      },
-      "messages": {
-        "hostExist": "您已添加此主机",
-        "notFound": "找不到托管工作流 \"{id}\" id"
-      }
+      "and": "并且",
+      "or": "或者",
+      "topAwait": "支持顶层 await 和“automaRefData”函数"
     },
     "type": {
       "local": "本地",
@@ -283,17 +265,6 @@
       "title": "取消发布工作流",
       "button": "取消发布",
       "body": "您确定要取消发布 \"{name}\" 工作流吗?"
-    },
-    "share": {
-      "url": "共享 URL",
-      "publish": "发布",
-      "sharedAs": "共享为 \"{name}\"",
-      "title": "共享工作流",
-      "download": "添加工作流到本地",
-      "edit": "编辑详细描述",
-      "fetchLocal": "获取本地工作流",
-      "update": "更新",
-      "unpublish": "取消发布"
     },
     "variables": {
       "title": "变量 | 变量",
@@ -345,11 +316,11 @@
       "notification": {
         "title": "工作流通知",
         "description": "执行后显示工作流状态（成功或失败）",
-        "noPermission": "Automa 需要 \"notifications\" 权限才能正常工作"
+        "noPermission": "自动化工具 需要 \"notifications\" 权限才能正常工作"
       },
       "publicId": {
-        "title": "工作流公开 Id",
-        "description": "用于JS自定义事件使用此公共ID执行工作流"
+        "title": "工作流公开标识",
+        "description": "用于通过 JavaScript 自定义事件执行工作流"
       },
       "defaultColumn": {
         "title": "插入信息到默认列",
@@ -358,7 +329,7 @@
       },
       "autocomplete": {
         "title": "自动完成",
-        "description": "在输入块中启用自动完成（如果造成 Automa 不稳定请禁用）"
+        "description": "在输入块中启用自动完成（如果造成 自动化工具 不稳定请禁用）"
       },
       "clearCache": {
         "title": "清理缓存",
@@ -420,7 +391,7 @@
     }
   },
   "log": {
-    "flowId": "流程 Id",
+    "flowId": "流程标识",
     "goBack": "返回到 \"{name}\" 日志",
     "goWorkflow": "转到工作流",
     "startedDate": "启动日期",
@@ -451,7 +422,7 @@
       "active-tab-removed": "工作流活动标签页已删除",
       "empty-spreadsheet-range": "电子表格范围为空",
       "stop-timeout": "工作流程因超时而停止",
-      "no-file-access": "Automa 无权访问该文件",
+      "no-file-access": "自动化工具 无权访问该文件",
       "no-workflow": "找不到含 \"{workflowId}\" ID 的工作流",
       "no-match-tab": "找不到含 \"{pattern}\" 参数的标签页",
       "no-clipboard-acces": "无权访问剪贴板",
@@ -482,7 +453,7 @@
       "types": {
         "json": "JSON",
         "csv": "CSV",
-        "plain-text": "Plain text"
+        "plain-text": "纯文本"
       }
     },
     "filter": {

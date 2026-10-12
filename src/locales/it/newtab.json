@@ -4,8 +4,8 @@
     "communities": "Comunità"
   },
   "welcome": {
-    "title": "Benvenuto su Automa! 🎉",
-    "text": "Puoi cominciare leggendo la documentazione o esplorando i workflow nel marketplace di Automa.",
+    "title": "Benvenuto su 自动化工具! 🎉",
+    "text": "Puoi cominciare leggendo la documentazione o esplorando i workflow nel marketplace di 自动化工具.",
     "marketplace": "Marketplace"
   },
   "packages": {
@@ -29,7 +29,7 @@
     "nextRun": "Prossima esecuzione",
     "active": "Attivo",
     "refresh": "Ricarica",
-    "schedule":{
+    "schedule": {
       "title": "Regola",
       "types": {
         "everyDay": "Ogni giorno",
@@ -81,7 +81,7 @@
     }
   },
   "updateMessage": {
-    "text1": "Automa è stato aggiorno alla versione v{version},",
+    "text1": "自动化工具 è stato aggiorno alla versione v{version},",
     "text2": "scopri le novità."
   },
   "workflows": {
@@ -91,13 +91,6 @@
       "delete": "Elimina cartella",
       "rename": "Rinomina cartella"
     }
-  },
-  "auth": {
-    "title": "Autenticazione",
-    "signIn": "Accedi",
-    "username": "Devi prima impostare il tuo nome utente",
-    "clickHere": "Clicca qui",
-    "text": "Per poterlo fare, è necessario aver effettuato l'accesso."
   },
   "running": {
     "start": "Iniziato il {date}",
@@ -159,25 +152,6 @@
         "title": "Ripristina workflow",
         "button": "Ripristina",
         "update": "Aggiorna se il workflow esiste"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "Locale",
-          "cloud": "Cloud"
-        },
-        "location": "Posizione",
-        "delete": "Elimina backup",
-        "title": "Backup Cloud",
-        "sync": "Sincronizza",
-        "lastSync": "Ultima sincronizzazione",
-        "lastBackup": "Ultimo backup",
-        "select": "Seleziona i workflow",
-        "storedWorkflows": "Workflow archiviati nel cloud",
-        "selected": "Selezionati",
-        "selectText": "Seleziona i workflow di cui vuoi eseguire il backup",
-        "selectAll": "Seleziona tutto",
-        "deselectAll": "Deseleziona tutto",
-        "needSelectWorkflow": "Devi selezionare i workflow di cui vuoi eseguire il backup"
       }
     }
   },
@@ -202,7 +176,6 @@
     "browse": "Esplora workflow",
     "name": "Nome workflow",
     "rename": "Rinomina workflow",
-    "backupCloud": "Esegui backup nel cloud",
     "add": "Aggiungi workflow",
     "clickToEnable": "Clicca per abilitare",
     "toggleSidebar": "Apri/chiudi barra laterale",
@@ -227,20 +200,6 @@
       "or": "OR",
       "topAwait": "Supporta l'await di primo livello e il metodo \"automaRefData\""
     },
-    "host": {
-      "title": "Ospita workflow",
-      "set": "Imposta il workflow come host",
-      "id": "ID host",
-      "add": "Aggiungi workflow ospitato",
-      "sync": {
-        "title": "Sincronizza",
-        "description": "Sincronizza col workflow dell'host"
-      },
-      "messages": {
-        "hostExist": "Hai già aggiunto questo host",
-        "notFound": "Impossibile trovare un workflow ospitato con l'ID \"{id}\""
-      }
-    },
     "type": {
       "local": "Locale",
       "shared": "Condiviso",
@@ -250,17 +209,6 @@
       "title": "Annulla pubblicazione",
       "button": "Conferma",
       "body": "Sei sicuro di voler annullare la pubblicazione del workflow \"{name}\"?"
-    },
-    "share": {
-      "url": "Condividi URL",
-      "publish": "Pubblica",
-      "sharedAs": "Condiviso come \"{name}\"",
-      "title": "Condividi workflow",
-      "download": "Salva workflow in locale",
-      "edit": "Modifica descrizione",
-      "fetchLocal": "Recupera workflow locale",
-      "update": "Aggiorna",
-      "unpublish": "Annulla pubblicazione"
     },
     "variables": {
       "title": "Variabile | Variabili",
@@ -325,7 +273,7 @@
       },
       "autocomplete": {
         "title": "Autocompletamento",
-        "description": "Abilita l'autocompletamento nel blocco di input (disabilita se rende Automa instabile)"
+        "description": "Abilita l'autocompletamento nel blocco di input (disabilita se rende 自动化工具 instabile)"
       },
       "clearCache": {
         "title": "Svuota cache",
@@ -418,13 +366,13 @@
       "active-tab-removed": "La scheda attiva del workflow è stata chiusa",
       "empty-spreadsheet-range": "L'intervallo del foglio di calcolo è vuoto",
       "stop-timeout": "Il workflow è stato interrotto a causa dello scadere del timeout",
-      "no-file-access": "Automa non ha accesso al file",
+      "no-file-access": "自动化工具 non ha accesso al file",
       "no-workflow": "Impossibile trovare un workflow con l'ID \"{workflowId}\"",
       "no-match-tab": "Impossibile trovare una scheda che corrisponda al pattern \"{pattern}\"",
-      "no-clipboard-acces": "Automa non dispone del permesso per accedere agli appunti",
+      "no-clipboard-acces": "自动化工具 non dispone del permesso per accedere agli appunti",
       "browser-not-supported": "Questa funzione non è supportata in un browser {browser}",
       "element-not-found": "Impossibile trovare un elemento con il selettore \"{selector}\"",
-      "no-permission": "Automa non dispone del permesso \"{permission}\" per eseguire questa azione",
+      "no-permission": "自动化工具 non dispone del permesso \"{permission}\" per eseguire questa azione",
       "not-iframe": "L'elemento con il selettore \"{selettore}\" non è un elemento iframe",
       "iframe-not-found": "Impossibile trovare un elemento iframe con il selettore \"{selector}\"",
       "workflow-infinite-loop": "Impossibile eseguire il workflow per evitare di ripetere un ciclo infinito",

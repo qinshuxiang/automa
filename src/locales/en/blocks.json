@@ -15,7 +15,7 @@
         "selector": "Element selector",
         "selectorOptions": "Selector options",
         "timeout": "Timeout (milliseconds)",
-        "noPermission": "Automa doesn't have enough permissions to perform this action",
+        "noPermission": "自动化工具 doesn't have enough permissions to perform this action",
         "grantPermission": "Grant permission",
         "action": "Action",
         "element": {
@@ -241,7 +241,19 @@
       },
       "insert-data": {
         "name": "Insert data",
-        "description": "Insert data into table or variable"
+        "description": "Insert data into table or variable",
+        "filePath": "Intranet file URL / permitted absolute file path",
+        "sheet": "Sheet (optional)",
+        "range": "Range (optional)",
+        "importFile": "Read file",
+        "preview": "Preview data",
+        "clearPreview": "Clear preview",
+        "default": "Raw content",
+        "base64": "Read as Base64",
+        "csvExcel": "CSV / Excel file",
+        "json": "Read as JSON",
+        "jsonHeader": "Read as JSON with headers",
+        "noFileAccess": "Disk files require existing browser access. You can use a reachable intranet file URL without changing browser settings."
       },
       "clipboard": {
         "name": "Clipboard",
@@ -282,7 +294,7 @@
         "addFile": "Add file",
         "onlyURL": "Only uploading files from a URL is supported in the Firefox browser",
         "requirement": "Read the requirements before using this block",
-        "noFileAccess": "Automa doesn't have access to files"
+        "noFileAccess": "自动化工具 doesn't have access to files"
       },
       "browser-event": {
         "name": "Browser event",
@@ -349,7 +361,7 @@
           "targetWebsite": "The Match Pattern of the website where the target element is (click to see more Match Pattern examples)",
           "baseEl": {
             "title": "Base element (optional)",
-            "description": "Automa will restart observing the target element when this element changes"
+            "description": "自动化工具 will restart observing the target element when this element changes"
           },
           "subtree": {
             "title": "Include subtree",
@@ -396,59 +408,6 @@
         "insertVars": "Insert current workflow variables",
         "useCommas": "Use commas to separate the variable name",
         "insertAllGlobalData": "Use all current workflow globalData"
-      },
-      "google-sheets-drive": {
-        "name": "@:workflow.blocks.google-sheets.name (GDrive)",
-        "description": "@:workflow.blocks.google-sheets.description",
-        "connected": "Connected sheets",
-        "select": "Select sheet",
-        "connect": "Connect sheet"
-      },
-      "google-drive": {
-        "name": "Google Drive",
-        "description": "Upload files to Google Drive",
-        "actions": {
-          "upload": "Upload files"
-        }
-      },
-      "google-sheets": {
-        "name": "Google Sheets",
-        "description": "Read or update Google Sheets data",
-        "previewData": "Preview data",
-        "firstRow": "Use the first row as keys",
-        "keysAsFirstRow": "Use keys as the first row",
-        "insertData": "Insert data",
-        "valueInputOption": "Value input option",
-        "insertDataOption": "Insert data option",
-        "rangeToSearch": "Range to start the search",
-        "dataFrom": {
-          "label": "Data from",
-          "options": {
-            "data-columns": "Table",
-            "custom": "Custom"
-          }
-        },
-        "refKey": {
-          "label": "Reference key (optional)",
-          "placeholder": "Key name"
-        },
-        "spreadsheetId": {
-          "label": "Spreadsheet Id",
-          "link": "See how to get spreadsheet Id"
-        },
-        "range": {
-          "label": "Range",
-          "link": "Click to see more examples"
-        },
-        "select": {
-          "get": "Get spreadsheet cell values",
-          "getRange": "Get spreadsheet range",
-          "update": "Update spreadsheet cell values",
-          "append": "Append spreadsheet cell values",
-          "clear": "Clear spreadsheet cell values",
-          "create": "Create a spreadsheet",
-          "add-sheet": "Add sheet"
-        }
       },
       "active-tab": {
         "name": "Active tab",
@@ -541,7 +500,6 @@
           "placeholder": "Data to export",
           "options": {
             "data-columns": "Table",
-            "google-sheets": "Google Sheets",
             "variable": "Variable"
           }
         }
@@ -765,7 +723,6 @@
             "data-columns": "Table",
             "table": "Table",
             "custom-data": "Custom data",
-            "google-sheets": "Google Sheets",
             "elements": "Elements"
           }
         }
@@ -800,6 +757,19 @@
       "debugMode": {
         "title": "Debug mode",
         "description": "Execute block using the Chrome DevTools Protocol"
+      }
+    },
+    "blockList": {
+      "pin": "Pin block",
+      "unpin": "Unpin block",
+      "categories": {
+        "general": "General",
+        "browser": "Browser",
+        "data": "Data",
+        "package": "Packages",
+        "interaction": "Web interaction",
+        "conditions": "Control flow",
+        "proxy": "Proxy"
       }
     }
   }

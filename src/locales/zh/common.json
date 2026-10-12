@@ -40,14 +40,16 @@
     "disable": "禁用",
     "disabled": "已禁用",
     "enable": "启用",
-    "fallback": "反馈",
+    "fallback": "错误后备处理",
     "update": "更新",
     "feature": "特点",
     "duplicate": "副本",
     "password": "密码",
     "category": "分类",
     "optional": "可选",
-    "0disable": "0 到禁用"
+    "0disable": "设为 0 可禁用",
+    "closeTab": "关闭标签页",
+    "millisecond": "毫秒 | 毫秒"
   },
   "message": {
     "noBlock": "没有模块",
@@ -72,5 +74,52 @@
     "stopped": "停止",
     "error": "错误",
     "success": "成功"
+  },
+  "selector": {
+    "select": "选择元素",
+    "settings": "选择器设置",
+    "includeId": "包含元素 ID",
+    "includeTag": "包含标签名",
+    "includeClass": "包含类名",
+    "includeAttributes": "包含属性",
+    "attributeNames": "属性名称",
+    "attributeName": "属性名",
+    "attributeHint": "使用逗号分隔多个属性",
+    "selectHint": "单击或按空格键选择元素",
+    "css": "CSS 选择器",
+    "list": "选择一组元素",
+    "placeholder": "元素选择器",
+    "parent": "父元素",
+    "child": "子元素",
+    "attributes": "属性",
+    "empty": "空",
+    "elementOptions": "下拉选项",
+    "optionName": "选项名称",
+    "optionValue": "选项值",
+    "selectBlock": "选择模块",
+    "element": "元素"
+  },
+  "params": {
+    "introduction": "请填写以下工作流参数，然后运行。",
+    "promptBlock": "由参数提示模块请求",
+    "continue": "继续",
+    "run": "运行",
+    "imageUnavailable": "无法显示图片"
+  },
+  "recorder": {
+    "stop": "停止录制",
+    "select": "选择元素",
+    "selectList": "选择列表元素",
+    "clickElement": "点击页面上的元素进行选择",
+    "listId": "元素列表 ID",
+    "save": "保存",
+    "selectAction": "选择操作",
+    "selectAttribute": "选择属性",
+    "assignVariable": "赋值给变量",
+    "variableName": "变量名称",
+    "insertTable": "插入表格",
+    "selectColumn": "选择列（默认不插入）",
+    "cancel": "取消",
+    "addBlock": "添加节点"
   }
 }

@@ -15,7 +15,7 @@
         "selector": "Sélecteur d'éléments",
         "selectorOptions": "Options du Sélecteur",
         "timeout": "Délai d'attente (millisecondes)",
-        "noPermission": "Automa n'a pas les droits nécessaires pour effectuer cette action",
+        "noPermission": "自动化工具 n'a pas les droits nécessaires pour effectuer cette action",
         "grantPermission": "Accorder les droits",
         "action": "Action",
         "element": {
@@ -275,7 +275,7 @@
         "filePath": "URL ou chemin d'accès au fichier",
         "addFile": "Ajouter un fichier",
         "requirement": "Voir les conditions requises avant d'utiliser ce bloc",
-        "noFileAccess": "Automa n'a pas accès aux fichiers"
+        "noFileAccess": "自动化工具 n'a pas accès aux fichiers"
       },
       "browser-event": {
         "name": "Événement du navigateur",
@@ -337,7 +337,7 @@
           "targetWebsite": "La modèle correspondant du site où se trouve l'élément ciblé (cliquer pour voir plus d'exemples de Modèles)",
           "baseEl": {
             "title": "Elément de base (optionnel)",
-            "description": "Automa redémarrera l'observation de l'élément ciblé quand cet élément sera modifié"
+            "description": "自动化工具 redémarrera l'observation de l'élément ciblé quand cet élément sera modifié"
           },
           "subtree": {
             "title": "Inclure 'Subtree'",
@@ -383,57 +383,6 @@
         "insertAllVars": "Utiliser toutes les variables du workflow actuel",
         "insertVars": "Insérer les variables du workflow actuel",
         "useCommas": "Utiliser des virgules pour séparer les noms de variable"
-      },
-      "google-sheets-drive": {
-        "name": "@:workflow.blocks.google-sheets.name (GDrive)",
-        "description": "@:workflow.blocks.google-sheets.description",
-        "connected": "Feuilles de calcul connectées",
-        "select": "Choisir une feuille de calcul",
-        "connect": "Connecter une feuille de calcul"
-      },
-      "google-drive": {
-        "name": "Google Drive",
-        "description": "Téléverser des fichiers vers Google Drive",
-        "actions": {
-          "upload": "Téléverser des fichiers"
-        }
-      },
-      "google-sheets": {
-        "name": "Google sheets",
-        "description": "Lire ou mettre à jour les données Google Sheets",
-        "previewData": "Aperçu des données",
-        "firstRow": "Utilisez la première ligne comme clés",
-        "keysAsFirstRow": "Utiliser les clés comme première ligne",
-        "insertData": "Insérer des données",
-        "valueInputOption": "Option de saisie de valeur",
-        "dataFrom": {
-          "label": "Données de",
-          "options": {
-            "data-columns": "Table",
-            "custom-data": "Données personnalisées"
-          }
-        },
-        "refKey": {
-          "label": "Clé de référence (facultatif)",
-          "placeholder": "Nom de la clé"
-        },
-        "spreadsheetId": {
-          "label": "Identifiant de la feuille de calcul",
-          "link": "Découvrez comment obtenir un identifiant de feuille de calcul"
-        },
-        "range": {
-          "label": "Plage",
-          "link": "Cliquez pour voir plus d'exemple"
-        },
-        "select": {
-          "get": "Obtenir les valeurs des cellules de la feuille de calcul",
-          "getRange": "Obtenir la plage de valeurs de la feuille de calcul",
-          "update": "Mettre à jour les valeurs des cellules de la feuille de calcul",
-          "append": "Ajouter les valeurs des cellules à la feuille de calcul",
-          "clear": "Effacer les valeurs des cellules",
-          "create": "Créer une feuille de calcul",
-          "add-sheet": "Ajouter une feuille de calcul"
-        }
       },
       "active-tab": {
         "name": "Onglet actif",
@@ -523,7 +472,6 @@
           "placeholder": "Données à exporter",
           "options": {
             "data-columns": "Table",
-            "google-sheets": "Google sheets",
             "variable": "Variable"
           }
         }
@@ -740,7 +688,6 @@
             "data-columns": "Table",
             "table": "Table",
             "custom-data": "Données personnalisées",
-            "google-sheets": "Google sheets",
             "elements": "Elements"
           }
         }

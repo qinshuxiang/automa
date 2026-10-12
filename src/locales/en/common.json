@@ -48,7 +48,8 @@
     "category": "Category",
     "optional": "Optional",
     "0disable": "0 to disable",
-    "millisecond": "millisecond | milliseconds"
+    "millisecond": "millisecond | milliseconds",
+    "closeTab": "Close tab"
   },
   "message": {
     "noBlock": "No block",
@@ -73,5 +74,52 @@
     "stopped": "stopped",
     "error": "error",
     "success": "success"
+  },
+  "selector": {
+    "select": "Select element",
+    "settings": "Selector settings",
+    "includeId": "Include element ID",
+    "includeTag": "Include tag name",
+    "includeClass": "Include class name",
+    "includeAttributes": "Include attributes",
+    "attributeNames": "Attribute names",
+    "attributeName": "Attribute name",
+    "attributeHint": "Separate attributes with commas",
+    "selectHint": "Click or press Space to select an element",
+    "css": "CSS selector",
+    "list": "Select a list of elements",
+    "placeholder": "Element selector",
+    "parent": "Parent element",
+    "child": "Child element",
+    "attributes": "Attributes",
+    "empty": "EMPTY",
+    "elementOptions": "Select element options",
+    "optionName": "Option name",
+    "optionValue": "Option value",
+    "selectBlock": "Select block",
+    "element": "Element"
+  },
+  "params": {
+    "introduction": "Enter these workflow parameters before running.",
+    "promptBlock": "Requested by a Parameter Prompt block",
+    "continue": "Continue",
+    "run": "Run",
+    "imageUnavailable": "Cannot display image"
+  },
+  "recorder": {
+    "stop": "Stop recording",
+    "select": "Select element",
+    "selectList": "Select list element",
+    "clickElement": "Select an element by clicking on it",
+    "listId": "Element list id",
+    "save": "Save",
+    "selectAction": "Select what to do",
+    "selectAttribute": "Select attribute",
+    "assignVariable": "Assign to variable",
+    "variableName": "Variable name",
+    "insertTable": "Insert to table",
+    "selectColumn": "Select column [none]",
+    "cancel": "Cancel",
+    "addBlock": "Add block"
   }
 }

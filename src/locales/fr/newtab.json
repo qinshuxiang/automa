@@ -3,20 +3,13 @@
     "viewAll": "Voir tout"
   },
   "welcome": {
-    "title": "Bienvenue sur Automa! 🎉",
-    "text": "Commencez par lire la documentation ou parcourez workflows dans Automa Marketplace.",
+    "title": "Bienvenue sur 自动化工具! 🎉",
+    "text": "Commencez par lire la documentation ou parcourez workflows dans 自动化工具 Marketplace.",
     "marketplace": "Marketplace"
   },
   "updateMessage": {
-    "text1": "Automa a été mis à jour vers v{version},",
+    "text1": "自动化工具 a été mis à jour vers v{version},",
     "text2": "Regardez ce qu'il y a de nouveau."
-  },
-  "auth": {
-    "title": "Authentification",
-    "signIn": "S'identifier",
-    "username": "Vous devez d'abord définir votre nom d'utilisateur",
-    "clickHere": "Cliquez ici",
-    "text": "Vous devez être connecté avant de pouvoir le faire"
   },
   "settings": {
     "theme": "Thème",
@@ -47,24 +40,6 @@
         "title": "Restaurer les workflows",
         "button": "Restaurer",
         "update": "Mettre à jour si le workflow existe"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "Locale",
-          "cloud": "Cloud"
-        },
-        "delete": "Supprimer la sauvegarde",
-        "title": "Enregistrer sur le cloud",
-        "sync": "Synchroniser",
-        "lastSync": "Dernière synchronisation",
-        "lastBackup": "Dernière sauvegarde",
-        "select": "Sélectionnez les workflows",
-        "storedWorkflows": "Workflows stockés dans le cloud",
-        "selected": "Sélectionné",
-        "selectText": "Sélectionnez les workflows que vous souhaitez sauvegarder",
-        "selectAll": "Tout sélectionner",
-        "deselectAll": "Tout déselectionner",
-        "needSelectWorkflow": "Vous devez sélectionner les workflows que vous souhaitez sauvegarder"
       }
     }
   },
@@ -79,20 +54,6 @@
     "clickToEnable": "Cliquer pour activer",
     "toggleSidebar": "Afficher/Cacher la barre latérale",
     "cantEdit": "Impossible de modifier le workflow partagé",
-    "host": {
-      "title": "Workflow hôte",
-      "set": "Définir comme workflow hôte",
-      "id": "Identifiant de l'hôte",
-      "add": "Ajouter un workflow hébergé",
-      "sync": {
-        "title": "Synchroniser",
-        "description": "Synchronisation avec le workflow de l'hôte"
-      },
-      "messages": {
-        "hostExist": "Vous avez déjà ajouté cet hôte",
-        "notFound": "Impossible de trouver le workflow hébergé avec l'identifiant \"{id}\""
-      }
-    },
     "type": {
       "local": "Locale",
       "shared": "Partagé",
@@ -102,17 +63,6 @@
       "title": "Annuler la publication du workflow",
       "button": "Annuler la publication",
       "body": "Voulez-vous vraiment annuler la publication du workflow \"{name}\" ?"
-    },
-    "share": {
-      "url": "Partager l'URL",
-      "publish": "Publier",
-      "sharedAs": "Partagé en tant que \"{name}\"",
-      "title": "Partager le workflow",
-      "download": "Télécharger le workflow",
-      "edit": "Éditer la description",
-      "fetchLocal": "Récupérer le workflow local",
-      "update": "Mettre à jour",
-      "unpublish": "Annuler la publication"
     },
     "variables": {
       "title": "Variable | Variables",
@@ -230,7 +180,7 @@
       "active-tab-removed": "L'onglet actif du workflow est supprimé",
       "empty-spreadsheet-range": "La plage de la feuille de calcul est vide",
       "stop-timeout": "Le workflow est arrêté en raison du délai d'attente",
-      "no-file-access": "Automa n'a pas accès au fichier",
+      "no-file-access": "自动化工具 n'a pas accès au fichier",
       "no-workflow": "Impossible de trouver le workflow avec l'ID \"{workflowId}\"",
       "no-match-tab": "Impossible de trouver un onglet avec les motifs \"{pattern}\"",
       "no-clipboard-acces": "Vous n'êtes pas autorisé à accéder au presse-papiers",

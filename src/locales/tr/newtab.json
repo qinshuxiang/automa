@@ -4,8 +4,8 @@
     "communities": "Topluluklar"
   },
   "welcome": {
-    "title": "Automa'ya Hoş Geldiniz! 🎉",
-    "text": "Belgelendirmeyi okuyarak veya Automa Marketplace'deki iş akışlarını göz atarak başlayın.",
+    "title": "自动化工具'ya Hoş Geldiniz! 🎉",
+    "text": "Belgelendirmeyi okuyarak veya 自动化工具 Marketplace'deki iş akışlarını göz atarak başlayın.",
     "marketplace": "Marketplace"
   },
   "packages": {
@@ -29,7 +29,7 @@
     "nextRun": "Sonraki çalıştırma",
     "active": "Aktif",
     "refresh": "Yenile",
-    "schedule":{
+    "schedule": {
       "title": "Zamanlama",
       "types": {
         "everyDay": "Her gün",
@@ -81,7 +81,7 @@
     }
   },
   "updateMessage": {
-    "text1": "Automa v{version} sürümüne güncellendi,",
+    "text1": "自动化工具 v{version} sürümüne güncellendi,",
     "text2": "yeniliklere göz atın."
   },
   "workflows": {
@@ -91,13 +91,6 @@
       "delete": "Klasörü Sil",
       "rename": "Klasörü Yeniden Adlandır"
     }
-  },
-  "auth": {
-    "title": "Kimlik Doğrulama",
-    "signIn": "Oturum aç",
-    "username": "Önce kullanıcı adınızı ayarlamanız gerekiyor",
-    "clickHere": "Buraya tıklayın",
-    "text": "Bunu yapmadan önce oturum açmanız gerekiyor"
   },
   "running": {
     "start": "Başlangıç tarihi: {date}",
@@ -165,25 +158,6 @@
         "title": "İş akışlarını geri yükle",
         "button": "Geri Yükle",
         "update": "Eğer iş akışı mevcutsa güncelle"
-      },
-      "cloud": {
-        "buttons": {
-          "local": "Yerel",
-          "cloud": "Bulut"
-        },
-        "location": "Konum",
-        "delete": "Yedeklemeyi Sil",
-        "title": "Bulut Yedekleme",
-        "sync": "Senkronize et",
-        "lastSync": "Son senkronizasyon",
-        "lastBackup": "Son yedekleme",
-        "select": "İş akışlarını seçin",
-        "storedWorkflows": "Bulutta depolanan iş akışları",
-        "selected": "Seçilen",
-        "selectText": "Yedeklemek istediğiniz iş akışlarını seçin",
-        "selectAll": "Hepsini Seç",
-        "deselectAll": "Hepsinin Seçimini Kaldır",
-        "needSelectWorkflow": "Yedeklemek istediğiniz iş akışlarını seçmelisiniz"
       }
     }
   },
@@ -239,7 +213,6 @@
     "browse": "İş Akışlarına Göz At",
     "name": "İş Akışı Adı",
     "rename": "İş Akışını Yeniden Adlandır",
-    "backupCloud": "İş Akışını Buluta Yedekle",
     "add": "İş Akışı Ekle",
     "clickToEnable": "Etkinleştirmek için tıklayın",
     "toggleSidebar": "Kenar Çubuğunu Aç/Kapat",
@@ -264,20 +237,6 @@
       "or": "VEYA",
       "topAwait": "Üst düzey bekleme ve \"automaRefData\" fonksiyonunu destekle"
     },
-    "host": {
-      "title": "İş Akışını Barındır",
-      "set": "Ana İş Akışı olarak ayarla",
-      "id": "Ana Bilgisayar Kimliği",
-      "add": "Barındırılan İş Akışı Ekle",
-      "sync": {
-        "title": "Senkronize Et",
-        "description": "Ana iş akışı ile senkronize et"
-      },
-      "messages": {
-        "hostExist": "Bu ana bilgisayarı zaten eklediniz",
-        "notFound": "Kimliği \"{id}\" olan barındırılan bir iş akışı bulunamıyor"
-      }
-    },
     "type": {
       "local": "Yerel",
       "shared": "Paylaşılan",
@@ -287,17 +246,6 @@
       "title": "İş Akışını Yayından Kaldır",
       "button": "Yayından Kaldır",
       "body": "İş akışını \"{name}\" yayından kaldırmak istediğinizden emin misiniz?"
-    },
-    "share": {
-      "url": "Paylaş URL",
-      "publish": "Yayınla",
-      "sharedAs": "Şu şekilde paylaşıldı: \"{name}\"",
-      "title": "İş Akışını Paylaş",
-      "download": "İş akışını yerel olarak kaydet",
-      "edit": "Açıklamayı düzenle",
-      "fetchLocal": "Yerel iş akışını getir",
-      "update": "Güncelle",
-      "unpublish": "Yayından kaldır"
     },
     "variables": {
       "title": "Değişken | Değişkenler",
@@ -362,7 +310,7 @@
       },
       "autocomplete": {
         "title": "Otomatik tamamlama",
-        "description": "Giriş bloğunda otomatik tamamlamayı etkinleştirin (Automa'nın kararsız hale gelirse devre dışı bırakın)"
+        "description": "Giriş bloğunda otomatik tamamlamayı etkinleştirin (自动化工具'nın kararsız hale gelirse devre dışı bırakın)"
       },
       "clearCache": {
         "title": "Önbelleği temizle",
@@ -402,7 +350,7 @@
       "tabLoadTimeout": {
         "title": "Sekme yükleme zaman aşımı",
         "description": "Bir sekmenin yüklenme süresi için maksimum süre milisaniye cinsinden, zaman aşımını devre dışı bırakmak için 0 girin"
-        }
+      }
     }
   },
   "collection": {
@@ -455,7 +403,7 @@
       "active-tab-removed": "İş akışı etkin sekmesi kaldırıldı",
       "empty-spreadsheet-range": "Tablo aralığı boş",
       "stop-timeout": "İş akışı zaman aşımı nedeniyle durduruldu",
-      "no-file-access": "Automa'nın dosyaya erişimi yok",
+      "no-file-access": "自动化工具'nın dosyaya erişimi yok",
       "no-workflow": "ID \"{workflowId}\" ile bir iş akışı bulunamıyor",
       "no-match-tab": "\"{pattern}\" deseniyle eşleşen bir sekme bulunamıyor",
       "no-clipboard-acces": "Pano erişim izni yok",
@@ -512,6 +460,4 @@
       "of": "toplam {page}"
     }
   }
-  
-
 }
