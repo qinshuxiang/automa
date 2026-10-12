@@ -1,7 +1,7 @@
 {
   "name": "automa",
   "version": "1.28.27",
-  "description": "An extension for automating your browser by connecting blocks",
+  "description": "面向 Chromium 90 的中文离线网页自动化工具，支持本地工作流、录制及加密备份。",
   "repository": {
     "type": "git",
     "url": "https://github.com/kholid060/automa.git"
@@ -25,7 +25,9 @@
     "pre-commit": "npx lint-staged"
   },
   "lint-staged": {
-    "*.{js,ts,vue}": "eslint --fix"
+    "*.{js,ts,vue}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.9.0",

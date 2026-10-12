@@ -3,6 +3,8 @@
 
 module.exports = {
   root: true,
+  // 中文离线版：async-lifecycle.js 为保持与成品包字节一致的手写 ES5 垫片，不参与 lint
+  ignorePatterns: ['src/async-lifecycle.js'],
   parserOptions: {
     parser: '@babel/eslint-parser',
   },

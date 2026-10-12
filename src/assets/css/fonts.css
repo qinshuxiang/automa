@@ -25,3 +25,12 @@
        url('../fonts/source-code-pro-v21-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
        url('../fonts/source-code-pro-v21-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
+
+/* 中文离线版：思源黑体（Noto Sans CJK SC），供 Chromium 90 / UOS 无系统中文字体时使用 */
+@font-face {
+  font-family: 'Automa Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/NotoSansCJKsc-Regular.otf') format('opentype');
+}

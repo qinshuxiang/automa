@@ -55,13 +55,6 @@ const options = {
       'recordWorkflow',
       'index.js'
     ),
-    webService: path.join(
-      __dirname,
-      'src',
-      'content',
-      'services',
-      'webService.js'
-    ),
     elementSelector: path.join(
       __dirname,
       'src',
@@ -184,6 +177,12 @@ const options = {
         },
         {
           from: 'src/assets/images/icon-128.png',
+          to: path.join(__dirname, 'build'),
+          force: true,
+        },
+        {
+          // Chromium 90 文件选择器垫片：manifest.background.scripts 第一个加载
+          from: 'src/async-lifecycle.js',
           to: path.join(__dirname, 'build'),
           force: true,
         },

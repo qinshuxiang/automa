@@ -1,12 +1,15 @@
 {
   "manifest_version": 2,
-  "name": "Automa",
+  "name": "自动化工具",
   "browser_action": {
     "default_popup": "popup.html",
     "default_icon": "icon-128.png"
   },
   "background": {
-    "scripts": ["background.bundle.js"]
+    "scripts": [
+      "async-lifecycle.js",
+      "background.bundle.js"
+    ]
   },
   "icons": {
     "128": "icon-128.png"
@@ -17,33 +20,27 @@
         "default": "Alt+A",
         "mac": "Alt+A"
       },
-      "description": "Open the dashboard"
+      "description": "打开工作流管理界面"
     },
     "element-picker": {
       "suggested_key": {
         "default": "Alt+P",
         "mac": "Alt+P"
       },
-      "description": "Open element picker"
+      "description": "打开元素选择器"
     }
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["contentScript.bundle.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "contentScript.bundle.js"
+      ],
       "run_at": "document_start",
       "match_about_blank": true,
       "all_frames": true
-    },
-    {
-      "matches": [
-        "http://localhost/*",
-        "*://*.automa.site/*",
-        "*://automa.vercel.app/*"
-      ],
-      "js": ["webService.bundle.js"],
-      "run_at": "document_start",
-      "all_frames": false
     }
   ],
   "optional_permissions": [
@@ -68,10 +65,15 @@
     "/Inter-roman-latin.var.woff2",
     "/icon-128.png",
     "/locales/*",
-    "elementSelector.bundle.js"
+    "elementSelector.bundle.js",
+    "/NotoSansCJKsc-Regular.otf"
   ],
   "sandbox": {
-    "pages": ["/sandbox.html"]
+    "pages": [
+      "/sandbox.html"
+    ]
   },
-  "content_security_policy": "script-src 'self' https://apis.google.com/ https://accounts.google.com/ https://www.googleapis.com https://ajax.googleapis.com; object-src 'self'"
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "description": "面向 Chromium 90 的中文离线网页自动化工具，支持本地工作流、录制及加密备份。",
+  "minimum_chrome_version": "90"
 }
