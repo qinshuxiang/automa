@@ -171,32 +171,8 @@ export function replaceMustache(str, replacer) {
 }
 
 export function openFilePicker(acceptedFileTypes = [], attrs = {}) {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = Array.isArray(acceptedFileTypes)
-      ? acceptedFileTypes.join(',')
-      : acceptedFileTypes;
-
-    Object.entries(attrs).forEach(([key, value]) => {
-      input[key] = value;
-    });
-
-    input.onchange = (event) => {
-      const { files } = event.target;
-      const validFiles = [];
-
-      Array.from(files).forEach((file) => {
-        if (!acceptedFileTypes.includes(file.type)) return;
-
-        validFiles.push(file);
-      });
-
-      resolve(validFiles);
-    };
-
-    input.click();
-  });
+  // Chromium 90 文件选择器垫片：支持扩展名规则与取消/焦点回归处理
+  return globalThis.__automaAsyncLifecycle.pickFiles(acceptedFileTypes, attrs);
 }
 
 export function fileSaver(filename, data) {

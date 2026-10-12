@@ -9,6 +9,8 @@ export async function webhook({ data, id }, { refData }) {
   const nextBlockId = this.getBlockConnections(id);
   const fallbackOutput = this.getBlockConnections(id, 'fallback');
 
+  let response;
+
   try {
     if (isWhitespace(data.url)) throw new Error('url-empty');
     if (!data.url.startsWith('http')) {
@@ -26,16 +28,34 @@ export async function webhook({ data, id }, { refData }) {
       newHeaders.push({ name, value: newValue });
     }
 
-    const response = await executeWebhook({ ...data, headers: newHeaders });
+    response = await executeWebhook({ ...data, headers: newHeaders });
 
     if (!response.ok) {
       const { status, statusText } = response;
-      const responseData = await (data.responseType === 'json'
-        ? response.json()
-        : response.text());
+
+      // 非 JSON 错误响应体先按原文读取，再按需 JSON.parse，
+      // 解析失败保留原文，不再抛二次异常丢 ctxData
+      let errorBody = null;
+      try {
+        const rawBody = await response.text();
+
+        try {
+          errorBody =
+            data.responseType === 'json' ? JSON.parse(rawBody) : rawBody;
+        } catch {
+          errorBody = rawBody;
+        }
+      } catch {
+        errorBody = null;
+      }
+
+      if (response.__automaTimeoutId) {
+        clearTimeout(response.__automaTimeoutId);
+      }
+
       const ctxData = {
         ctxData: {
-          request: { status, statusText, data: responseData },
+          request: { status, statusText, data: errorBody },
         },
       };
 
@@ -54,6 +74,10 @@ export async function webhook({ data, id }, { refData }) {
     }
 
     if (!data.assignVariable && !data.saveData) {
+      if (response.__automaTimeoutId) {
+        clearTimeout(response.__automaTimeoutId);
+      }
+
       return {
         data: '',
         nextBlockId,
@@ -73,17 +97,17 @@ export async function webhook({ data, id }, { refData }) {
       }
     } else if (data.responseType === 'base64') {
       const blob = await response.blob();
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve(reader.result);
-        };
-        reader.readAsDataURL(blob);
-      });
-
-      returnData = base64;
+      // Chromium 90 垫片读取：统一经 async-lifecycle 的 FileReader 封装
+      returnData = await globalThis.__automaAsyncLifecycle.readBlob(
+        blob,
+        'dataURL'
+      );
     } else {
       returnData = await response.text();
+    }
+
+    if (response.__automaTimeoutId) {
+      clearTimeout(response.__automaTimeoutId);
     }
 
     if (includeResponse) {
@@ -130,6 +154,11 @@ export async function webhook({ data, id }, { refData }) {
     error.nextBlockId = nextBlockId;
 
     throw error;
+  } finally {
+    // 任何出口都不泄漏超时计时器
+    if (response?.__automaTimeoutId) {
+      clearTimeout(response.__automaTimeoutId);
+    }
   }
 }
 

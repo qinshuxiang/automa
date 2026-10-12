@@ -32,6 +32,7 @@ module.exports = {
   // add your custom rules here
   globals: {
     BROWSER_TYPE: true,
+    globalThis: true,
   },
   rules: {
     camelcase: 'off',

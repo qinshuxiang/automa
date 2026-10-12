@@ -1,15 +1,13 @@
-export function readFileAsBase64(blob) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result);
-    };
-    reader.readAsDataURL(blob);
-  });
+export function readFileAsBase64(blob, options = {}) {
+  return globalThis.__automaAsyncLifecycle.readBlob(
+    blob,
+    'dataURL',
+    options.signal
+  );
 }
 
-async function downloadFile(url, options) {
-  const response = await fetch(url);
+async function downloadFile(url, options = {}) {
+  const response = await fetch(url, { signal: options.signal });
   if (!response.ok) throw new Error(response.statusText);
 
   const type = options.responseType || 'blob';
@@ -23,15 +21,16 @@ async function downloadFile(url, options) {
     const objUrl = URL.createObjectURL(result);
     return { objUrl, path: url, type: result.type };
   }
-  const base64 = await readFileAsBase64(result);
+
+  const base64 = await readFileAsBase64(result, options);
   return { path: url, objUrl: base64, type: result.type };
 }
-function getLocalFile(path, options) {
+function getLocalFile(path, options = {}) {
   return new Promise((resolve, reject) => {
     const isFile = /\.(.*)/.test(path);
 
     if (!isFile) {
-      reject(new Error(`"${path}" is invalid file path.`));
+      reject(new Error(`文件路径“${path}”无效。`));
       return;
     }
 
@@ -41,54 +40,100 @@ function getLocalFile(path, options) {
     if ('XMLHttpRequest' in self) {
       const xhr = new XMLHttpRequest();
       xhr.responseType = options.responseType || 'blob';
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
+
+      // 一次完成控制：任一出口触发后其余回调全部失效，abort 监听同步清理
+      let abortHandler = null;
+      let settled = false;
+      const settle = (error, value) => {
+        if (settled) return;
+        settled = true;
+
+        if (options.signal) {
+          options.signal.removeEventListener('abort', abortHandler);
+        }
+        xhr.onload = null;
+        xhr.onerror = null;
+        xhr.onabort = null;
+
+        if (error) reject(error);
+        else resolve(value);
+      };
+
+      abortHandler = () => {
+        settle(new Error('文件读取已取消'));
+        xhr.abort();
+      };
+
+      xhr.onload = () => {
+        try {
           if (xhr.status === 0 || xhr.status === 200) {
             if (options.returnValue) {
-              resolve(xhr.response);
+              settle(null, xhr.response);
               return;
             }
 
             const objUrl = URL.createObjectURL(xhr.response);
-            resolve({ path, objUrl, type: xhr.response.type });
+            settle(null, { path, objUrl, type: xhr.response.type });
           } else {
-            reject(new Error(xhr.statusText));
+            settle(new Error(xhr.statusText));
           }
+        } catch (error) {
+          settle(error);
         }
       };
       xhr.onerror = function () {
-        reject(
-          new Error(xhr.statusText || `Can't find a file with "${path}" path`)
-        );
+        settle(new Error(xhr.statusText || `未找到路径为“${path}”的文件`));
       };
-      xhr.open('GET', fileUrl);
-      xhr.send();
+      xhr.onabort = function () {
+        settle(new Error('文件读取已取消'));
+      };
+
+      if (options.signal) {
+        if (options.signal.aborted) {
+          settle(new Error('文件读取已取消'));
+          return;
+        }
+
+        options.signal.addEventListener('abort', abortHandler, { once: true });
+      }
+
+      try {
+        xhr.open('GET', fileUrl);
+        xhr.send();
+      } catch (error) {
+        settle(error);
+      }
     } else {
-      fetch(fileUrl)
+      fetch(fileUrl, { signal: options.signal })
         .then((response) => {
           if (!response.ok) throw new Error(response.statusText);
 
-          if (options.returnValue) return response.text();
+          if (options.returnValue) {
+            const responseType = options.responseType || 'blob';
+
+            if (responseType === 'json') return response.json();
+            if (responseType === 'text') return response.text();
+            return response.blob();
+          }
 
           return response.blob();
         })
-        .then((blob) => {
+        .then((result) => {
           if (options.returnValue) {
-            resolve(blob);
+            resolve(result);
             return;
           }
-          if (!blob) return;
+          if (!result) return;
 
           if (URL.createObjectURL) {
-            const objUrl = URL.createObjectURL(blob);
-            resolve({ path, objUrl, type: blob.type });
-          } else {
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve({ path, objUrl: reader.result, type: blob.type });
-            };
-            reader.readAsDataURL(blob);
+            const objUrl = URL.createObjectURL(result);
+            resolve({ path, objUrl, type: result.type });
+            return;
           }
+
+          readFileAsBase64(result, options).then((base64) => {
+            resolve({ path, objUrl: base64, type: result.type });
+          });
         })
         .catch(reject);
     }
@@ -96,7 +141,8 @@ function getLocalFile(path, options) {
 }
 
 export default function (path, options = {}) {
-  if (path.startsWith('http')) return downloadFile(path, options);
+  // HTTP(S) 判定不区分大小写，与格式识别器保持一致
+  if (/^https?:\/\//i.test(path)) return downloadFile(path, options);
 
   return getLocalFile(path, options);
 }

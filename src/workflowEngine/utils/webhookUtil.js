@@ -13,39 +13,40 @@ const renderContent = async (content, contentType) => {
   }
   if (contentType === 'form-data') {
     if (!Array.isArray(renderedJson) || !Array.isArray(renderedJson[0])) {
-      throw new Error('The body must be 2D Array');
+      throw new Error('请求体必须是二维数组');
     }
 
     const formData = new FormData();
     for (const data of renderedJson) {
-      const [name, path, customFilename] = data;
-      const isFile = /\.(.*)/.test(path) && BROWSER_TYPE !== 'firefox';
-      const isURL = path.startsWith('http');
+      const [name, value, customFilename] = data;
+      const stringValue = String(value);
+      // 仅绝对路径样式的值按文件处理（盘符/斜杠开头、~/、file:），
+      // 含点号的文本不再被误判为文件路径
+      const isFile =
+        /^([a-zA-Z]:)?[\\/]/.test(stringValue) ||
+        stringValue.startsWith('~/') ||
+        stringValue.startsWith('file:');
+      const isURL = /^https?:\/\//i.test(stringValue);
 
-      let formContent = path;
+      let formContent = stringValue;
       let filename = customFilename;
 
       if (isFile || isURL) {
-        formContent = await getFile(path, { returnValue: true });
+        formContent = await getFile(stringValue, { returnValue: true });
 
         if (!filename) {
-          filename = path.split('/').pop();
+          filename = stringValue.split('/').pop();
         }
 
-        if (!formContent) throw new Error('File not found');
-      } else {
-        let base64Str = '';
+        if (!formContent) throw new Error('未找到文件');
+      } else if (/^data:/i.test(stringValue)) {
+        const response = await fetch(stringValue);
 
-        if (path.includes('base64')) {
-          base64Str = path;
-        } else {
-          base64Str = `data:text/plain;base64,${window.btoa(path)}`;
-        }
-
-        const response = await fetch(base64Str);
-        const result = await response.blob();
-
-        formContent = result;
+        formContent = await response.blob();
+      } else if (filename) {
+        // 指定了文件名的标量文本按 Blob(text/plain) 发送，
+        // 不再经 btoa 中转，中文与非 Latin1 字符不再损坏
+        formContent = new Blob([stringValue], { type: 'text/plain' });
       }
 
       const args = [name, formContent];
@@ -116,7 +117,9 @@ export async function executeWebhook({
 
     const response = await fetch(url, payload);
 
-    if (timeoutId) clearTimeout(timeoutId);
+    // 超时计时器挂到响应对象上：读响应体期间的超时同样生效，
+    // 由消费方在读完 body 后清理
+    response.__automaTimeoutId = timeoutId;
 
     return response;
   } catch (error) {

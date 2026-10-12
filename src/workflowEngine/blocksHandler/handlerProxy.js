@@ -26,7 +26,8 @@ function setProxy({ data, id }) {
     if (!isWhitespace(data.host)) {
       let proxyHost = data.host;
 
-      const schemeRegex = /^https?|socks4|socks5/i;
+      // scheme 整体分组匹配：原正则未分组时 socks4/socks5 会脱离锚点
+      const schemeRegex = /^(https?|socks4|socks5):\/\//i;
       if (schemeRegex.test(data.host)) {
         /* eslint-disable-next-line */
         let [scheme, host] = data.host.split(/:\/\/(.*)/);
@@ -59,11 +60,35 @@ function setProxy({ data, id }) {
       return;
     }
 
-    if (proxyPort && !Number.isNaN(+proxyPort)) {
+    // 端口必须是 1..65535 的整数：Chromium 90 会把非法端口钳位为 65535
+    // 且不置 lastError，必须在调用前拦截
+    if (
+      proxyPort !== '' &&
+      proxyPort != null &&
+      (!Number.isInteger(Number(proxyPort)) ||
+        Number(proxyPort) < 1 ||
+        Number(proxyPort) > 65535)
+    ) {
+      const error = new Error('invalid-proxy-port');
+      error.nextBlockId = nextBlockId;
+
+      reject(error);
+      return;
+    }
+
+    if (proxyPort !== '' && proxyPort != null) {
       config.rules.singleProxy.port = +proxyPort;
     }
 
     chrome.proxy.settings.set({ value: config, scope: 'regular' }, () => {
+      // 设置失败经 chrome.runtime.lastError 传播为异常
+      const proxyError = chrome.runtime.lastError;
+
+      if (proxyError) {
+        reject(new Error(proxyError.message || 'proxy-settings-failed'));
+        return;
+      }
+
       this.engine.isUsingProxy = true;
 
       resolve({
