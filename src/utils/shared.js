@@ -1,4 +1,4 @@
-export const tasks = {
+const taskBlocks = {
   trigger: {
     name: 'Trigger',
     description: 'Block where workflow will start executing',
@@ -586,117 +586,6 @@ export const tasks = {
       eventName: '',
       eventType: '',
       eventParams: { bubbles: true, cancelable: false },
-    },
-  },
-  'google-sheets': {
-    name: 'Google sheets',
-    description: 'Read Google Sheets data',
-    icon: 'mdiGoogleSheet',
-    component: 'BlockBasic',
-    editComponent: 'EditGoogleSheets',
-    category: 'onlineServices',
-    inputs: 1,
-    outputs: 1,
-    allowedInputs: true,
-    maxConnection: 1,
-    refDataKeys: ['customData', 'range', 'spreadsheetId', 'variableName'],
-    autocomplete: ['refKey'],
-    data: {
-      disableBlock: false,
-      range: '',
-      refKey: '',
-      type: 'get',
-      customData: '',
-      description: '',
-      spreadsheetId: '',
-      dataColumn: '',
-      saveData: true,
-      assignVariable: false,
-      variableName: '',
-      firstRowAsKey: false,
-      keysAsFirstRow: true,
-      valueInputOption: 'RAW',
-      InsertDataOption: 'INSERT_ROWS',
-      dataFrom: 'data-columns',
-    },
-  },
-  'google-sheets-drive': {
-    name: 'Google sheets (GDrive)',
-    description: 'Read Google Sheets data',
-    icon: 'riDriveFill',
-    component: 'BlockBasic',
-    editComponent: 'EditGoogleSheetsDrive',
-    category: 'onlineServices',
-    inputs: 1,
-    outputs: 1,
-    allowedInputs: true,
-    maxConnection: 1,
-    refDataKeys: [
-      'customData',
-      'range',
-      'spreadsheetId',
-      'sheetName',
-      'variableName',
-    ],
-    autocomplete: ['refKey'],
-    data: {
-      disableBlock: false,
-      range: '',
-      refKey: '',
-      type: 'get',
-      customData: '',
-      description: '',
-      spreadsheetId: '',
-      dataColumn: '',
-      inputSpreadsheetId: 'connected',
-      saveData: true,
-      sheetName: '',
-      assignVariable: false,
-      variableName: '',
-      firstRowAsKey: false,
-      keysAsFirstRow: true,
-      valueInputOption: 'RAW',
-      InsertDataOption: 'INSERT_ROWS',
-      dataFrom: 'data-columns',
-    },
-  },
-  'google-drive': {
-    name: 'Google drive',
-    description: 'Upload files to Google Drive',
-    icon: 'riDriveLine',
-    component: 'BlockBasic',
-    editComponent: 'EditGoogleDrive',
-    category: 'onlineServices',
-    inputs: 1,
-    outputs: 1,
-    allowedInputs: true,
-    maxConnection: 1,
-    refDataKeys: [],
-    autocomplete: ['refKey'],
-    data: {
-      disableBlock: false,
-      action: 'upload',
-      filePaths: [],
-    },
-  },
-  conditions: {
-    name: 'Conditions',
-    description: 'Conditional block',
-    icon: 'riAB',
-    component: 'BlockConditions',
-    editComponent: 'EditConditions',
-    category: 'conditions',
-    inputs: 1,
-    outputs: 0,
-    allowedInputs: true,
-    maxConnection: 1,
-    data: {
-      description: '',
-      disableBlock: false,
-      conditions: [],
-      retryConditions: false,
-      retryCount: 10,
-      retryTimeout: 1000,
     },
   },
   'element-exists': {
@@ -1473,6 +1362,30 @@ export const tasks = {
     },
   },
 };
+
+// 中文离线版：已移除联网服务块（Google Sheets/Drive）。
+// 对未知块（旧工作流仍引用已删除块）返回统一占位，避免运行与展示崩溃。
+const unsupportedBlock = (id) => ({
+  name: `不支持的节点：${id}`,
+  description: '原数据已保留；此离线版无法执行该节点',
+  icon: 'riErrorWarningLine',
+  component: 'BlockBasic',
+  editComponent: 'EditUnsupported',
+  category: 'general',
+  inputs: 1,
+  outputs: 1,
+  allowedInputs: true,
+  maxConnection: 1,
+  refDataKeys: [],
+  data: {},
+});
+
+export const tasks = new Proxy(taskBlocks, {
+  get: (obj, prop) =>
+    typeof prop !== 'string' || prop in obj
+      ? obj[prop]
+      : unsupportedBlock(prop),
+});
 
 export const categories = {
   interaction: {
