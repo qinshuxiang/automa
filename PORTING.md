@@ -38,11 +38,33 @@
 
 ## 阶段 3：修复移植（工作量主体）
 
-- [ ] 2026-10-10 FIX-REPORT：28 项代码修复（#1-#4、#7、#8、#10-#18-#21、#22/#23、#26-#28 background；#5、#6、#16、#17、#24、#25 contentScript）+ 2 项管理页缺陷（#29、#30）+ #33 关于页
-- [ ] 2026-10-11 导入数据修复：5 项（范围空格、HTTP 协议大小写、隐藏范围配置、错误项序号、目标类型分支）
-- [ ] 重建后 `node output/code-review-2026-10-10/probes.cjs` 全过（预期 3 项 harnessError）
-- [ ] 重建后 `output/import-data-fix-2026-10-11/regressions.test.cjs` 89 项全过
-- [ ] 双入口一致性：background 与 newtab 管理页引擎副本同步修复
+### 3a/3b 前序批次 ✅（742e442、cc4f0ec 及多个提交）
+
+- [x] 2026-10-10 FIX-REPORT：28 项代码修复（#1-#4、#7、#8、#10-#18-#21、#22/#23、#26-#28 background；#5、#6、#16、#17、#24、#25 contentScript）+ 2 项管理页缺陷（#29、#30）+ #33 关于页
+- [x] 2026-10-11 导入数据修复：5 项（范围空格、HTTP 协议大小写、隐藏范围配置、错误项序号、目标类型分支）
+- [x] 2026-10-05 P1/P2 批次与 audit-21 项
+- [x] 双入口一致性：background 与 newtab 管理页引擎副本同步修复
+
+### 3c 剩余中文字符串移植与引擎对齐 ✅
+
+- [x] shared.js 注册表中文定制：AST codemod 160 处（57 块 name/description、conditionBuilder、eventList 21 项、supportLocales、regexPresets 13 项）+ conditions 块 description「条件模块」
+- [x] 引擎运行时错误中文化（对照包模块 dump）：
+  - handlerSwitchTab `未找到索引为 N 的标签页`、handlerActiveTab `未找到活动标签页`
+  - handlerClipboard `后台执行不支持剪贴板模块`（条件对齐包版：仅 isPopup/isMV2）
+  - handlerRepeatTask 重写对齐包版：非负整数校验 `重复次数必须是非负整数` + 0 次直接结束分支
+  - handlerBrowserEvent `未找到事件 X`、handlerBlockPackage `未找到输入`/`未找到此输入对应的模块`
+  - handlerWaitConnections `未选择指定流程`、content handlerLink `此元素不是链接`
+  - content/utils getElementPosition `未找到内嵌框架`、WorkflowWorker blockExecutionWrapper Timeout → `节点执行超时，操作结果未知；请确认页面状态后再运行`
+  - helper checkCSPAndInject `无法执行代码`
+- [x] content/index.js messageToFrame 增强（对齐包版）：超时兜底 `网页框架通信超时，操作结果未知；请确认页面状态后再运行`（30s+5s 起、clamp 300s）、source/messageId 双校验、storage 写入失败 reject、signal 剥离与 checkExecutionSignal；`"…"没有对应的处理程序`（中文引号）、`模块标识为空`
+- [x] sandbox automaFetch type 校验 `“type”必须为“text”或“json”`
+- [x] 信号系统：content/executionSignal.js（getExecutionSignal/abortExecutionSignal/checkExecutionSignal，包内为惰性管线）+ cancel-workflow-execution 消息 case
+- [x] 已记录偏差（不复制缺陷/结构差异）：
+  - JS 块执行架构：源码采用 v1.28.27（background executeScript MAIN + sandbox + automaId 回执校验 + preload await），包为旧架构（content 执行 + background CSP 兜底，模块 27686）；preload 校验语义（URL 协议检查）覆盖包「网址无效」
+  - `.automa.json` 文件安装流（confirm/alert）为旧版入口，v1.28.27 已移除，不移植
+  - elementSelector/recordWorkflow/newtab 内联 locale vs locale chunk 分包差异（行为等价）
+  - 备份/恢复完整子系统（包模块 85245 全量 + 25539 格式校验）与 SettingsBackup UI 单独排期；backupRestore.js/workflowValidation.js 已产出未接线
+- [x] 验证：probes.cjs 25 项 0 confirmed（无缺陷复现）；regressions.test.cjs 42/42 通过；CJK 差集收敛至 944 项（注释残留 + 备份子系统 + locale 分包差异三类已知项）
 
 ## 验证与交付
 

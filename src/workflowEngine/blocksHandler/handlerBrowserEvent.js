@@ -106,7 +106,7 @@ export default async function ({ data, id }) {
   const currentEvent = events[data.eventName];
 
   if (!currentEvent) {
-    throw new Error(`Can't find ${data.eventName} event`);
+    throw new Error(`未找到事件 ${data.eventName}`);
   }
 
   const result = await currentEvent(data, this.activeTab);

@@ -191,7 +191,7 @@ export async function getElementPosition(element) {
     } else {
       frameRect = await messageTopFrame(elWindow);
 
-      if (!frameRect) throw new Error('Iframe not found');
+      if (!frameRect) throw new Error('未找到内嵌框架');
     }
 
     position.x += frameRect.x;

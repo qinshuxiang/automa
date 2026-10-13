@@ -59,7 +59,7 @@ async function activeTab(block) {
 
     const [tab] = await browser.tabs.query(tabsQuery);
     if (!tab) {
-      throw new Error("Can't find active tab");
+      throw new Error('未找到活动标签页');
     }
     if (!tab || !tab?.url.startsWith('http')) {
       const error = new Error('invalid-active-tab');

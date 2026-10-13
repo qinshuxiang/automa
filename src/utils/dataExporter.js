@@ -52,18 +52,25 @@ export default function (
         : JSON.stringify(jsonData, null, 2);
   } else if (type === 'plain-text') {
     const extractObj = (obj) => {
-      if (typeof obj !== 'object') return [obj];
+      // 显式处理 null/undefined：不是对象直接作为单项返回
+      if (obj === null || obj === undefined || typeof obj !== 'object') {
+        return [obj];
+      }
 
       // 需要处理深层对象 不然会返回:[object Object]
-      const kes = Object.keys(obj);
-      kes.forEach((key) => {
+      // 构建副本返回：不再原地修改输入对象
+      const copy = {};
+      Object.keys(obj).forEach((key) => {
         const itemValue = obj[key];
-        if (typeof itemValue === 'object') {
-          obj[key] = JSON.stringify(itemValue);
-        }
+        copy[key] =
+          itemValue !== null &&
+          itemValue !== undefined &&
+          typeof itemValue === 'object'
+            ? JSON.stringify(itemValue)
+            : itemValue;
       });
 
-      return Object.values(obj);
+      return Object.values(copy);
     };
 
     result = (

@@ -9,7 +9,7 @@ export async function sliceData({ id, data }) {
     const { variables } = this.engine.referenceData;
 
     if (!objectHasKey(variables, data.varSourceName)) {
-      throw new Error(`Cant find "${data.varSourceName}" variable`);
+      throw new Error(`未找到变量“${data.varSourceName}”`);
     }
 
     dataToSort = variables[data.varSourceName];
@@ -18,7 +18,7 @@ export async function sliceData({ id, data }) {
   if (!Array.isArray(dataToSort)) {
     const dataType = dataToSort === null ? 'null' : typeof dataToSort;
 
-    throw new Error(`Can't sort data with "${dataType}" data type`);
+    throw new Error(`无法对“${dataType}”类型的数据进行排序`);
   }
 
   const getComparisonValue = ({ itemA, itemB, order = 'asc' }) => {
@@ -36,7 +36,10 @@ export async function sliceData({ id, data }) {
     let comparison = 0;
 
     if (data.sortByProperty) {
+      // 多字段排序：首个非零比较结果生效，不再被后续字段覆盖
       data.itemProperties.forEach(({ name, order }) => {
+        if (comparison !== 0) return;
+
         comparison = getComparisonValue({
           order,
           itemA: a[name] ?? a,
@@ -53,6 +56,10 @@ export async function sliceData({ id, data }) {
     return comparison;
   });
 
+  // 嵌套/持久变量（$$ 前缀）排序结果写回存储
+  if (data.dataSource === 'variable' && data.varSourceName.startsWith('$')) {
+    await this.setVariable(data.varSourceName, sortedArray);
+  }
   if (data.assignVariable) {
     await this.setVariable(data.variableName, sortedArray);
   }

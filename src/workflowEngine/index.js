@@ -1,12 +1,15 @@
 /* eslint-disable no-restricted-globals */
-import { toRaw } from 'vue';
 import browser from 'webextension-polyfill';
+import cloneDeep from 'lodash.clonedeep';
 import dayjs from '@/lib/dayjs';
 import { parseJSON } from '@/utils/helper';
 import { fetchApi } from '@/utils/api';
 import { sendMessage } from '@/utils/message';
 import convertWorkflowData from '@/utils/convertWorkflowData';
 import getBlockMessage from '@/utils/getBlockMessage';
+import decryptFlow, { getWorkflowPass } from '@/utils/decryptFlow';
+import { isRestoreBlocked } from '@/utils/backupRestore';
+import { validateWorkflowData } from '@/utils/workflowValidation';
 import WorkflowState from './WorkflowState';
 import WorkflowLogger from './WorkflowLogger';
 import WorkflowEngine from './WorkflowEngine';
@@ -37,6 +40,27 @@ export function stopWorkflowExec(executionId) {
 }
 
 export function startWorkflowExec(workflowData, options, isPopup = true) {
+  // 本地数据恢复期间禁止执行工作流，避免读到恢复中的半成品数据
+  if (isRestoreBlocked()) {
+    throw new Error('正在恢复本地数据，暂时不能执行工作流');
+  }
+
+  if (workflowData?.isProtected) {
+    const pass = getWorkflowPass(workflowData.pass);
+    const decryptedFlow = decryptFlow(workflowData, pass);
+
+    if (decryptedFlow?.isError) {
+      throw new Error('受保护工作流解密失败，请确认原安装密钥');
+    }
+
+    workflowData = {
+      ...workflowData,
+      drawflow: parseJSON(decryptedFlow, decryptedFlow),
+    };
+  }
+
+  validateWorkflowData(workflowData);
+
   if (self.localStorage) {
     const runCounts =
       parseJSON(self.localStorage.getItem('runCounts'), {}) || {};
@@ -51,12 +75,20 @@ export function startWorkflowExec(workflowData, options, isPopup = true) {
     }
   }
 
+  // 深拷贝（含 drawflow）后再交给引擎，避免运行中修改污染调用方数据
   const clonedWorkflowData = {};
   Object.keys(workflowData).forEach((key) => {
-    clonedWorkflowData[key] = toRaw(workflowData[key]);
+    clonedWorkflowData[key] = cloneDeep(workflowData[key]);
   });
 
   const convertedWorkflow = convertWorkflowData(clonedWorkflowData);
+  const hasStartBlock = convertedWorkflow.drawflow?.nodes?.some((node) =>
+    options?.blockId ? node.id === options.blockId : node.label === 'trigger'
+  );
+  if (!hasStartBlock) {
+    throw new Error('工作流缺少有效的起始节点，无法执行');
+  }
+
   const engine = new WorkflowEngine(convertedWorkflow, {
     options,
     isPopup,
@@ -65,8 +97,13 @@ export function startWorkflowExec(workflowData, options, isPopup = true) {
     blocksHandler: blocksHandler(),
   });
 
-  engine.init();
+  workflowState.pendingExecutions = (workflowState.pendingExecutions || 0) + 1;
+  engine.init().finally(() => {
+    workflowState.pendingExecutions -= 1;
+  });
+
   engine.on('destroyed', ({ id, status, history, blockDetail, ...rest }) => {
+    // 手动停止（stopped）不算运行结束，不弹通知也不触发事件动作
     if (status !== 'stopped') {
       browser.permissions
         .contains({ permissions: ['notifications'] })
@@ -79,10 +116,10 @@ export function startWorkflowExec(workflowData, options, isPopup = true) {
           browser.notifications.create(`logs:${id}`, {
             type: 'basic',
             iconUrl: browser.runtime.getURL('icon-128.png'),
-            title: status === 'success' ? 'Success' : 'Error',
-            message: `${
-              status === 'success' ? 'Successfully' : 'Failed'
-            } to run the "${name}" workflow`,
+            title: status === 'success' ? '运行成功' : '运行失败',
+            message: `工作流“${name}”${
+              status === 'success' ? '已完成' : '执行失败'
+            }`,
           });
         });
     }
@@ -108,10 +145,12 @@ export function startWorkflowExec(workflowData, options, isPopup = true) {
       };
 
       convertedWorkflow.settings.events.forEach((event) => {
-        if (status === 'success' && !event.events.includes('finish:success'))
-          return;
-        if (status === 'error' && !event.events.includes('finish:failed'))
-          return;
+        // stopped 等状态没有对应的结束事件，直接跳过
+        const eventName = {
+          success: 'finish:success',
+          error: 'finish:failed',
+        }[status];
+        if (!eventName || !event.events.includes(eventName)) return;
 
         workflowEventHandler(event.action, {
           workflow: workflowRefData,

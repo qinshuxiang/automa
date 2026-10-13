@@ -6,7 +6,8 @@ function getValues(data, keys) {
   keys.forEach((key) => {
     const value = data[key];
 
-    if (!value) return;
+    // 仅剔除 null/undefined/空字符串；false、0 等是有效值不过滤
+    if (value === null || value === undefined || value === '') return;
 
     values[key] = value;
   });
@@ -51,7 +52,7 @@ async function cookie({ data, id }) {
 
   if (data.useJson) {
     const obj = parseJSON(data.jsonCode, null);
-    if (!obj) throw new Error('Invalid JSON format');
+    if (!obj) throw new Error('JSON 格式无效');
 
     result = await browser.cookies[key](obj);
   } else {

@@ -15,13 +15,25 @@ import shortcutListener from './services/shortcutListener';
 import initCommandPalette from './commandPalette';
 // import elementObserver from './elementObserver';
 import { elementSelectorInstance } from './utils';
+import { abortExecutionSignal, checkExecutionSignal } from './executionSignal';
 
 const isMainFrame = window.self === window.top;
 
 function messageToFrame(frameElement, blockData) {
   return new Promise((resolve, reject) => {
-    function onMessage({ data }) {
-      if (data.type !== 'automa:block-execute-result') return;
+    const messageId = `message:${nanoid(12)}`;
+    let timeoutId;
+
+    function onMessage({ data, source }) {
+      if (
+        data.type !== 'automa:block-execute-result' ||
+        data.messageId !== messageId ||
+        source !== frameElement.contentWindow
+      )
+        return;
+
+      clearTimeout(timeoutId);
+      window.removeEventListener('message', onMessage);
 
       if (data.result?.$isError) {
         const error = new Error(data.result.message);
@@ -31,22 +43,38 @@ function messageToFrame(frameElement, blockData) {
       } else {
         resolve(data.result);
       }
-
-      window.removeEventListener('message', onMessage);
     }
     window.addEventListener('message', onMessage);
 
-    const messageId = `message:${nanoid(4)}`;
-    browser.storage.local.set({ [messageId]: true }).then(() => {
-      frameElement.contentWindow.postMessage(
-        {
-          messageId,
-          type: 'automa:execute-block',
-          blockData: { ...blockData, frameSelector: '' },
-        },
-        '*'
+    // 框架通信必须带超时兜底：iframe 挂死或消息丢失时不能无限等待
+    timeoutId = setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      browser.storage.local.remove(messageId);
+
+      reject(
+        new Error('网页框架通信超时，操作结果未知；请确认页面状态后再运行')
       );
-    });
+    }, Math.min(Math.max(Number(blockData.data?.timeout) || 30000, 30000) + 5000, 300000));
+
+    const { signal, ...blockDataWithoutSignal } = blockData;
+    browser.storage.local
+      .set({ [messageId]: true })
+      .then(() => {
+        checkExecutionSignal(signal);
+        frameElement.contentWindow.postMessage(
+          {
+            messageId,
+            type: 'automa:execute-block',
+            blockData: { ...blockDataWithoutSignal, frameSelector: '' },
+          },
+          '*'
+        );
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('message', onMessage);
+        reject(error);
+      });
   });
 }
 async function executeBlock(data) {
@@ -71,6 +99,7 @@ async function executeBlock(data) {
         waitForSelector: 5000,
         selector: framElSelector,
       },
+      undefined,
       documentCtx
     );
     const frameError = (message) => {
@@ -113,7 +142,7 @@ async function executeBlock(data) {
     return result;
   }
 
-  const error = new Error(`"${data.label}" doesn't have a handler`);
+  const error = new Error(`“${data.label}”没有对应的处理程序`);
   console.error(error);
 
   throw error;
@@ -147,7 +176,7 @@ async function messageListener({ data, source }) {
           {
             result: {
               $isError: true,
-              message: 'Block id is empty',
+              message: '模块标识为空',
               data: {},
             },
             type: 'automa:block-execute-result',
@@ -285,6 +314,10 @@ async function messageListener({ data, source }) {
     }
 
     switch (data.type) {
+      case 'cancel-workflow-execution':
+        // 后台销毁工作流执行时通知各标签页中止进行中的操作
+        abortExecutionSignal(data.executionId);
+        return true;
       case 'input-workflow-params':
         window.initPaletteParams?.(data.data);
         return Boolean(window.initPaletteParams);

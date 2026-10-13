@@ -19,13 +19,11 @@ export function registerContextMenu(triggerId, data) {
       return;
     }
 
-    const workflowId = triggerId.includes(':')
-      ? triggerId.split(':')[1]
-      : triggerId;
-
+    // 菜单 ID 保持完整 trigger:工作流:触发项 格式：
+    // 同工作流多个右键菜单触发项不再因 ID 冲突互相覆盖
     browserContext.create(
       {
-        id: workflowId,
+        id: triggerId,
         documentUrlPatterns,
         contexts: contextTypes,
         title: data.contextMenuName,
@@ -40,10 +38,10 @@ export function registerContextMenu(triggerId, data) {
                 documentUrlPatterns,
                 contexts: ['all'],
                 id: 'automaContextMenu',
-                title: 'Run Automa workflow',
+                title: '运行 自动化工具 工作流',
               },
               () => {
-                registerContextMenu(workflowId, data)
+                registerContextMenu(triggerId, data)
                   .then(resolve)
                   .catch(reject);
               }
@@ -53,7 +51,7 @@ export function registerContextMenu(triggerId, data) {
           }
           if (error.message.includes('Duplicate id')) {
             browserContext.remove(triggerId).then(() => {
-              registerContextMenu(workflowId, data).then(resolve).catch(reject);
+              registerContextMenu(triggerId, data).then(resolve).catch(reject);
             });
             return;
           }

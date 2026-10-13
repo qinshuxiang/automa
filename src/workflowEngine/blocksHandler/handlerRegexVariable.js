@@ -5,14 +5,12 @@ export async function regexVariable({ id, data }) {
   const variableExist = objectPath.has(refVariables, data.variableName);
 
   if (!variableExist) {
-    throw new Error(`Cant find "${data.variableName}" variable`);
+    throw new Error(`未找到变量“${data.variableName}”`);
   }
 
   const str = objectPath.get(refVariables, data.variableName);
   if (typeof str !== 'string') {
-    throw new Error(
-      `The value of the "${data.variableName}" variable is not a string/text`
-    );
+    throw new Error(`变量“${data.variableName}”的值不是字符串／文本`);
   }
 
   const method = data.method || 'match';
@@ -32,6 +30,17 @@ export async function regexVariable({ id, data }) {
     data.variableName,
     newValue
   );
+
+  // $$ 前缀变量写回经 setVariable 持久化（替换后 $$ 变量不再丢更新），
+  // 其余变量仅更新引用快照
+  if (data.variableName.startsWith('$')) {
+    await this.setVariable(
+      data.variableName.split('.')[0],
+      this.engine.referenceData.variables[data.variableName.split('.')[0]]
+    );
+  } else {
+    this.engine.addRefDataSnapshot('variables');
+  }
 
   return {
     data: newValue,

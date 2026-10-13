@@ -29,7 +29,23 @@ export class MessageListener {
     try {
       if (isFirefox) message = JSON.parse(message);
 
+      // 网页无权调用后台请求：fetch 桥消息只能来自扩展自身页面，
+      // 防止任意网页借用后台权限发起请求
+      if (
+        message.name === 'background--fetch' ||
+        message.name === 'background--fetch:text'
+      ) {
+        if (
+          sender?.id !== browser.runtime.id ||
+          !sender?.url?.startsWith(browser.runtime.getURL(''))
+        )
+          throw new Error('网页无权调用后台请求');
+      }
+
       const listener = this.listeners[message.name];
+
+      if (!listener) console.warn(`未注册的后台消息类型：${message.name}`);
+
       const response =
         listener && listener.call({ message, sender }, message.data, sender);
 
@@ -41,9 +57,7 @@ export class MessageListener {
       }
       return response;
     } catch (err) {
-      return Promise.reject(
-        new Error(`Unhandled Background Error: ${String(err)}`)
-      );
+      return Promise.reject(new Error(`未处理的后台错误：${String(err)}`));
     }
   }
 }

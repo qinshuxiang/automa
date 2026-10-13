@@ -8,17 +8,22 @@ Mousetrap.prototype.stopCallback = function () {
 
 function automaCustomEventListener(findWorkflow) {
   function customEventListener({ detail }) {
-    if (!detail || (!detail.id && !detail.publicId)) return;
+    // 网页触发按 settings.publicId 查找工作流；
+    // 未携带 publicId 的事件直接忽略
+    if (!detail || !detail.publicId) return;
 
-    const workflowId = detail.id || detail.publicId;
-    const workflow = findWorkflow(workflowId, Boolean(detail.publicId));
+    const workflow = findWorkflow(detail.publicId, true);
 
     if (!workflow) return;
 
     workflow.options = {
       data: detail.data || {},
     };
-    sendMessage('workflow:execute', workflow, 'background');
+    sendMessage(
+      'workflow:execute',
+      { ...workflow, _viaPublicId: true },
+      'background'
+    );
   }
 
   window.addEventListener('__automaExecuteWorkflow', customEventListener);

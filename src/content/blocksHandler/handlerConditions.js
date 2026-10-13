@@ -56,6 +56,8 @@ async function handleConditionElement({ data, type, id, frameSelector }) {
 async function handleConditionCode({ data, refData }) {
   return new Promise((resolve, reject) => {
     const varName = `automa${nanoid()}`;
+    // 每次执行使用独立事件名：避免同页并发条件节点互相接收回执
+    const eventName = `__automa-condition-code__-${nanoid()}`;
 
     const scriptEl = document.createElement('script');
     scriptEl.textContent = `
@@ -72,7 +74,7 @@ async function handleConditionCode({ data, refData }) {
         }
       })()
         .then((detail) => {
-          window.dispatchEvent(new CustomEvent('__automa-condition-code__', { detail }));
+          window.dispatchEvent(new CustomEvent('${eventName}', { detail }));
         });
     `;
 
@@ -80,20 +82,18 @@ async function handleConditionCode({ data, refData }) {
 
     const handleAutomaEvent = ({ detail }) => {
       scriptEl.remove();
-      window.removeEventListener(
-        '__automa-condition-code__',
-        handleAutomaEvent
-      );
+      window.removeEventListener(eventName, handleAutomaEvent);
 
-      if (detail.$isError) {
+      // detail 判空：空值/无返回解析为“不匹配”（null），Promise 正常结束
+      if (detail && detail.$isError) {
         reject(new Error(detail.message));
         return;
       }
 
-      resolve(detail);
+      resolve(detail ?? null);
     };
 
-    window.addEventListener('__automa-condition-code__', handleAutomaEvent);
+    window.addEventListener(eventName, handleAutomaEvent);
   });
 }
 

@@ -37,7 +37,15 @@ class BackgroundWorkflowTriggers {
       ({ url, isRegex, supportSPA }) => {
         if (!url.trim() || (spa && !supportSPA)) return false;
 
-        return tabUrl.match(isRegex ? new RegExp(url, 'g') : url);
+        // 非正则 URL 用 includes 字面匹配，不再把普通字符串当正则；
+        // 正则路径捕获无效正则的构造异常
+        if (!isRegex) return tabUrl.includes(url.trim());
+
+        try {
+          return new RegExp(url, 'g').test(tabUrl);
+        } catch (regexError) {
+          return false;
+        }
       }
     );
 

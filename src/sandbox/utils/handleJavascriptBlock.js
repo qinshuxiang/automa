@@ -107,7 +107,7 @@ export default function (data) {
       return new Promise((resolve, reject) => {
         const types = ['json', 'text'];
         if (!type || !types.includes(type)) {
-          reject(new Error('The "type" must be "text" or "json"'));
+          reject(new Error('“type”必须为“text”或“json”'));
           return;
         }
 

@@ -19,7 +19,7 @@ export default async function (
 
   const input = data.inputs.find((item) => item.id === targetId);
   if (!input) {
-    throw new Error('Input not found');
+    throw new Error('未找到输入');
   }
   const block = data.data.nodes.find((node) => node.id === input.blockId);
   pkgCache.nodes[targetId] = addBlockPrefix(block.id);
@@ -55,7 +55,7 @@ export default async function (
     });
 
     if (!block) {
-      throw new Error(`Can't find block for this input`);
+      throw new Error('未找到此输入对应的模块');
     }
 
     data.data.edges.forEach(({ sourceHandle, target, targetHandle }) => {

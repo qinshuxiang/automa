@@ -30,6 +30,17 @@ export async function sliceData({ id, data }) {
     slicedVariable
   );
 
+  // $$ 前缀变量写回经 setVariable 持久化（截取后 $$ 变量不再丢更新），
+  // 其余变量仅更新引用快照
+  if (data.variableName.startsWith('$')) {
+    await this.setVariable(
+      data.variableName.split('.')[0],
+      this.engine.referenceData.variables[data.variableName.split('.')[0]]
+    );
+  } else {
+    this.engine.addRefDataSnapshot('variables');
+  }
+
   return payload;
 }
 

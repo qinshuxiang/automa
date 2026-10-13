@@ -16,7 +16,7 @@
         <optgroup
           v-for="(types, label) in filterValueTypes(index)"
           :key="label"
-          :label="label"
+          :label="valueTypeCategoryLabels[label] || label"
         >
           <option v-for="type in types" :key="type.id" :value="type.id">
             {{ type.name }}
@@ -81,21 +81,45 @@
         />
       </template>
     </div>
-    <ui-select
+    <div
       v-else-if="item.category === 'compare'"
-      :model-value="inputsData[index].type"
-      @change="updateCompareType($event, index)"
+      class="flex items-center space-x-2"
     >
-      <optgroup
-        v-for="(types, category) in conditionOperators"
-        :key="category"
-        :label="category"
+      <ui-select
+        :model-value="inputsData[index].type"
+        @change="updateCompareType($event, index)"
       >
-        <option v-for="type in types" :key="type.id" :value="type.id">
-          {{ type.name }}
+        <optgroup
+          v-for="(types, category) in conditionOperators"
+          :key="category"
+          :label="category"
+        >
+          <option v-for="type in types" :key="type.id" :value="type.id">
+            {{ type.name }}
+          </option>
+        </optgroup>
+      </ui-select>
+      <!-- 正则匹配时提供常用正则预设，选中后自动填入下方值 -->
+      <ui-select
+        v-if="
+          item.type === 'rgx' &&
+          inputsData[index + 1] &&
+          inputsData[index + 1].type === 'value'
+        "
+        :model-value="regexPresetId"
+        class="shrink-0"
+        title="选择常用正则预设，自动填入下方值"
+        @change="applyRegexPreset($event, index)"
+      >
+        <option
+          v-for="preset in conditionBuilder.regexPresets"
+          :key="preset.id"
+          :value="preset.id"
+        >
+          {{ preset.name }}
         </option>
-      </optgroup>
-    </ui-select>
+      </ui-select>
+    </div>
   </div>
 </template>
 <script setup>
@@ -146,12 +170,32 @@ const conditionOperators = conditionBuilder.compareTypes.reduce((acc, type) => {
 
   return acc;
 }, {});
+const valueTypeCategoryLabels = {
+  basic: '基本',
+  number: '数字',
+  text: '文本',
+  boolean: '布尔值',
+};
 
 const excludeData = ['context'];
 const workflow = inject('workflow');
 
 const { t } = useI18n();
 const inputsData = ref(cloneDeep(props.data));
+const regexPresetId = ref('');
+
+function applyRegexPreset(presetId, index) {
+  const preset = conditionBuilder.regexPresets.find(
+    ({ id }) => id === presetId
+  );
+  const nextInput = inputsData.value[index + 1];
+
+  if (preset && nextInput && nextInput.type === 'value') {
+    nextInput.data.value = preset.pattern;
+  }
+
+  regexPresetId.value = '';
+}
 
 function getConditionDataList(inputData) {
   const keys = Object.keys(inputData.data);

@@ -25,7 +25,11 @@ function excludeSelector({ type, selector, loopAttr }) {
     return `${selector}:not([automa-loop*="${loopAttr}"])`;
   }
 
-  return `${selector}[not(contains(@automa-loop, 'gku9rbk-qje-F'))]`;
+  // XPath 循环：排除条件使用当前真实 loopAttr（剔除引号），不再硬编码
+  return `${selector}[not(contains(@automa-loop, '${String(loopAttr).replace(
+    /'/g,
+    ''
+  )}'))]`;
 }
 
 export default async function ({ data, id }) {

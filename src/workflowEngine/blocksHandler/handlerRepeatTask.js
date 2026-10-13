@@ -1,8 +1,17 @@
 function repeatTask({ data, id }) {
-  return new Promise((resolve) => {
-    const repeat = Number.isNaN(+data.repeatFor) ? 0 : +data.repeatFor;
+  return new Promise((resolve, reject) => {
+    const repeat = +data.repeatFor;
 
-    if (this.repeatedTasks[id] > repeat || !this.getBlockConnections(id, 2)) {
+    if (!Number.isInteger(repeat) || repeat < 0) {
+      reject(new Error('重复次数必须是非负整数'));
+      return;
+    }
+
+    if (
+      repeat === 0 ||
+      this.repeatedTasks[id] > repeat ||
+      !this.getBlockConnections(id, 2)
+    ) {
       delete this.repeatedTasks[id];
 
       resolve({

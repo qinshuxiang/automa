@@ -1,18 +1,5 @@
 import browser from 'webextension-polyfill';
 
-function getFilename(url) {
-  try {
-    const filename = new URL(url).pathname.split('/').pop();
-    const hasExtension = /\.[0-9a-z]+$/i.test(filename);
-
-    if (!hasExtension) return null;
-
-    return filename;
-  } catch (e) {
-    return null;
-  }
-}
-
 export default async function ({ data, id, label }) {
   const hasPermission = await browser.permissions.contains({
     permissions: ['downloads'],
@@ -29,7 +16,20 @@ export default async function ({ data, id, label }) {
   let index = 0;
   const downloadFile = (url) => {
     const options = { url, conflictAction: data.onConflict };
-    let filename = decodeURIComponent(data.filename || getFilename(url));
+
+    // 只对 URL 提取的路径做 decodeURIComponent，
+    // 用户填写的文件名原样保留（如“完成率100%.jpg”不再报 URI malformed）
+    let filename = data.filename || null;
+    if (!filename) {
+      try {
+        const urlPart = new URL(url).pathname.split('/').pop();
+        if (urlPart && /\.[0-9a-z]+$/i.test(urlPart)) {
+          filename = decodeURIComponent(urlPart);
+        }
+      } catch (urlError) {
+        filename = null;
+      }
+    }
 
     if (filename) {
       if (data.onConflict === 'overwrite' && index !== 0) {

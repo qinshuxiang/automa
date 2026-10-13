@@ -62,8 +62,7 @@ export default async function ({ data, id }) {
   } else if (findTabBy === 'tab-index') {
     tab = tabs[data.tabIndex];
 
-    if (!tab)
-      throw generateError(`Can't find a tab with ${data.tabIndex} index`);
+    if (!tab) throw generateError(`未找到索引为 ${data.tabIndex} 的标签页`);
   }
 
   await browser.tabs.update(tab.id, { active: activeTab });

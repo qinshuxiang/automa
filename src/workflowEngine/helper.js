@@ -73,10 +73,23 @@ export function attachDebugger(tabId, prevTab) {
 
 export function waitTabLoaded({ tabId, listenError = false, ms = 10000 }) {
   return new Promise((resolve, reject) => {
-    let timeout = null;
+    let pollTimeout = null;
+    let timeoutId = null;
+    let settled = false;
     const excludeErrors = ['net::ERR_BLOCKED_BY_CLIENT', 'net::ERR_ABORTED'];
 
-    const onErrorOccurred = (details) => {
+    const settle = (settleFn, value) => {
+      if (settled) return;
+
+      settled = true;
+      clearTimeout(timeoutId);
+      clearTimeout(pollTimeout);
+      // eslint-disable-next-line no-use-before-define
+      browser.webNavigation.onErrorOccurred.removeListener(onErrorOccurred);
+      settleFn(value);
+    };
+
+    function onErrorOccurred(details) {
       if (
         details.tabId !== tabId ||
         details.frameId !== 0 ||
@@ -84,39 +97,38 @@ export function waitTabLoaded({ tabId, listenError = false, ms = 10000 }) {
       )
         return;
 
-      clearTimeout(timeout);
-      browser.webNavigation.onErrorOccurred.removeListener(onErrorOccurred);
-      reject(new Error(details.error));
-    };
-
-    if (ms > 0) {
-      timeout = setTimeout(() => {
-        browser.webNavigation.onErrorOccurred.removeListener(onErrorOccurred);
-        reject(new Error('Timeout'));
-      }, ms);
+      settle(reject, new Error(details.error));
     }
+
+    // 超时上限收敛到 1s ~ 300s，避免传入异常值导致无限等待
+    const clampedMs = Math.min(Math.max(Number(ms) || 10000, 1000), 300000);
+
+    timeoutId = setTimeout(() => {
+      settle(reject, new Error('页面加载超时，页面可能已冻结或访问受限'));
+    }, clampedMs);
+
     if (listenError && BROWSER_TYPE === 'chrome')
       browser.webNavigation.onErrorOccurred.addListener(onErrorOccurred);
 
-    const activeTabStatus = () => {
-      browser.tabs.get(tabId).then((tab) => {
+    const activeTabStatus = async () => {
+      try {
+        const tab = await browser.tabs.get(tabId);
+        if (settled) return;
+
         if (!tab) {
-          reject(new Error('no-tab'));
+          settle(reject, new Error('no-tab'));
           return;
         }
 
         if (tab.status === 'loading') {
-          setTimeout(() => {
-            activeTabStatus();
-          }, 1000);
+          pollTimeout = setTimeout(activeTabStatus, 250);
           return;
         }
 
-        clearTimeout(timeout);
-
-        browser.webNavigation.onErrorOccurred.removeListener(onErrorOccurred);
-        resolve();
-      });
+        settle(resolve);
+      } catch (error) {
+        settle(reject, error);
+      }
     };
 
     activeTabStatus();
@@ -130,8 +142,16 @@ export function convertData(data, type) {
 
   switch (type) {
     case 'integer':
-      /* eslint-disable-next-line */
-      result = typeof data !== 'number' ? +data?.replace(/\D+/g, '') : data;
+      // Number() 数值解析 + Math.trunc 截断：非法值返回 NaN，
+      // 不再删字符伪造数字（-12→-12，12.5→12，1e3→1000）
+      if (typeof data === 'number') {
+        result = data;
+      } else if (data === null || data === undefined) {
+        result = NaN;
+      } else {
+        const parsed = Number(String(data).trim());
+        result = Number.isNaN(parsed) ? NaN : Math.trunc(parsed);
+      }
       break;
     case 'boolean':
       result = Boolean(data);
@@ -288,7 +308,7 @@ export async function checkCSPAndInject(
     if (!debugMode) await chrome.debugger.detach({ tabId: target.tabId });
 
     if (!execResult || !execResult.result) {
-      throw new Error('Unable execute code');
+      throw new Error('无法执行代码');
     }
 
     if (execResult.result.subtype === 'error') {

@@ -36,7 +36,7 @@ function automaNextBlock(data, insert = true) {
       variables: ${varName}.variables,
     });
   } else{
-    document.body.dispatchEvent(new CustomEvent('__automa-next-block__', { detail: { data, insert, refData: ${varName} } }));
+    document.body.dispatchEvent(new CustomEvent('__automa-next-block__', { detail: { data, insert, refData: ${varName}, automaId: '${varName}' } }));
   }
 }
 function automaResetTimeout() {
@@ -46,7 +46,7 @@ function automaResetTimeout() {
       resolve();
     }, $automaTimeoutMs);
   } else {
-    document.body.dispatchEvent(new CustomEvent('__automa-reset-timeout__'));
+    document.body.dispatchEvent(new CustomEvent('__automa-reset-timeout__', { detail: { automaId: '${varName}' } }));
   }
 }
 function automaFetch(type, resource) {
@@ -137,29 +137,38 @@ export async function javascriptCode({ outputs, data, ...block }, { refData }) {
     payload.refData = { ...newRefData, secrets: {} };
   }
 
-  const preloadScriptsPromise = await Promise.allSettled(
-    data.preloadScripts.map(async (script) => {
-      const { protocol } = new URL(script.src);
-      const isValidUrl = /https?/.test(protocol);
-      if (!isValidUrl) return null;
+  // 预加载脚本失败必须立即报告具体 URL 和原因：
+  // 静默丢弃会让主脚本在缺少依赖的情况下继续运行
+  const preloadScripts = await (async () => {
+    const settledResults = await Promise.allSettled(
+      data.preloadScripts.map(async (script) => {
+        const { protocol } = new URL(script.src);
+        if (!/https?/.test(protocol))
+          throw new Error(`URL 协议无效，仅支持 http/https：${script.src}`);
 
-      const response = await fetch(script.src);
-      if (!response.ok) throw new Error(response.statusText);
+        const response = await fetch(script.src);
+        if (!response.ok)
+          throw new Error(`${response.statusText}：${script.src}`);
 
-      const result = await response.text();
+        return {
+          script: await response.text(),
+          id: `automa-script-${nanoid()}`,
+          removeAfterExec: script.removeAfterExec,
+        };
+      })
+    );
+    const loadedScripts = [];
+    for (const item of settledResults) {
+      if (item.status === 'rejected')
+        throw new Error(
+          `预加载脚本失败：${item.reason?.message || item.reason}`
+        );
+      if (!item.value) throw new Error('预加载脚本加载失败：结果为空');
 
-      return {
-        script: result,
-        id: `automa-script-${nanoid()}`,
-        removeAfterExec: script.removeAfterExec,
-      };
-    })
-  );
-  const preloadScripts = preloadScriptsPromise.reduce((acc, item) => {
-    if (item.status === 'fulfilled') acc.push(item.value);
-
-    return acc;
-  }, []);
+      loadedScripts.push(item.value);
+    }
+    return loadedScripts;
+  })();
 
   const instanceId = `automa${nanoid()}`;
   const automaScript =
@@ -238,7 +247,7 @@ export async function javascriptCode({ outputs, data, ...block }, { refData }) {
         }
 
         if (!customNextBlockId)
-          throw new Error(`Can't find block with "${inputNextBlockId}" id`);
+          throw new Error(`未找到标识为“${inputNextBlockId}”的模块`);
 
         nextBlockId = customNextBlockId;
       }

@@ -1,36 +1,22 @@
 import { getDocumentCtx } from '@/content/handleSelector';
 
-export function automaFetchClient(id, { type, resource }) {
+// 注意：本函数会通过 .toString() 注入网页上下文执行，必须保持自包含（不引用外部变量）
+export async function automaFetchClient(instance, { type, resource }) {
+  if (!['text', 'json', 'base64'].includes(type))
+    throw new Error('type 必须为 text、json 或 base64');
+  const { url, ...options } = resource;
+  const response = await fetch(url, options);
+  if (!response.ok)
+    throw new Error(`(${response.status}) ${response.statusText}`);
+  if (type === 'text') return response.text();
+  if (type === 'json') return response.json();
+  const blob = await response.blob();
   return new Promise((resolve, reject) => {
-    const validType = ['text', 'json', 'base64'];
-    if (!type || !validType.includes(type)) {
-      reject(new Error('The "type" must be "text" or "json"'));
-      return;
-    }
-
-    const eventName = `__automa-fetch-response-${id}__`;
-    const eventListener = ({ detail }) => {
-      if (detail.id !== id) return;
-
-      window.removeEventListener(eventName, eventListener);
-
-      if (detail.isError) {
-        reject(new Error(detail.result));
-      } else {
-        resolve(detail.result);
-      }
-    };
-
-    window.addEventListener(eventName, eventListener);
-    window.dispatchEvent(
-      new CustomEvent(`__automa-fetch__`, {
-        detail: {
-          id,
-          type,
-          resource,
-        },
-      })
-    );
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('读取响应失败'));
+    reader.onabort = () => reject(new Error('读取已取消'));
+    reader.readAsDataURL(blob);
   });
 }
 
@@ -67,7 +53,12 @@ export function jsContentHandlerEval({
   })();`;
 }
 
-export function jsContentHandler($blockData, $preloadScripts, $automaScript) {
+export function jsContentHandler(
+  $blockData,
+  $preloadScripts,
+  $automaScript,
+  $execId
+) {
   return new Promise((resolve, reject) => {
     try {
       let $documentCtx = document;
@@ -131,6 +122,15 @@ export function jsContentHandler($blockData, $preloadScripts, $automaScript) {
         let onNextBlock;
         let onResetTimeout;
 
+        // 未显式传入执行标识时生成本地唯一标识：
+        // 完成事件必须携带匹配的 automaId 才会被接受
+        let execId = $execId;
+        if (!execId) {
+          execId = `auto-${$blockData.id}-${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2)}`;
+        }
+
         /* eslint-disable-next-line */
         function cleanUp() {
           script.remove();
@@ -151,11 +151,16 @@ export function jsContentHandler($blockData, $preloadScripts, $automaScript) {
         }
 
         onNextBlock = ({ detail }) => {
-          cleanUp();
           if (!detail) {
             resolve({ columns: {}, variables: {} });
             return;
           }
+
+          // 回执身份校验：完成事件必须携带本执行的标识（automaId），
+          // 否则同页并发执行的 JavaScript 节点会互相接收对方的完成事件
+          if (detail.automaId !== execId) return;
+
+          cleanUp();
 
           const payload = {
             insert: detail.insert,
@@ -168,9 +173,15 @@ export function jsContentHandler($blockData, $preloadScripts, $automaScript) {
             variables: detail.refData?.variables,
           });
         };
-        onResetTimeout = () => {
+        onResetTimeout = (event) => {
+          const detail = event && event.detail;
+          if (detail && detail.automaId && detail.automaId !== execId) return;
+
           clearTimeout(timeout);
-          timeout = setTimeout(cleanUp, $blockData.data.timeout);
+          timeout = setTimeout(() => {
+            cleanUp();
+            reject(new Error('JavaScript 执行超时'));
+          }, $blockData.data.timeout);
         };
 
         $documentCtx.body.addEventListener(
@@ -182,7 +193,10 @@ export function jsContentHandler($blockData, $preloadScripts, $automaScript) {
           onResetTimeout
         );
 
-        timeout = setTimeout(cleanUp, $blockData.data.timeout);
+        timeout = setTimeout(() => {
+          cleanUp();
+          reject(new Error('JavaScript 执行超时'));
+        }, $blockData.data.timeout);
       } else {
         resolve();
       }

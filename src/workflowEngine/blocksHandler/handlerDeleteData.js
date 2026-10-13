@@ -1,6 +1,10 @@
+import dbStorage from '@/db/storage';
+
 function deleteData({ data, id }) {
-  return new Promise((resolve) => {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve) => {
     let variableDeleted = false;
+    const persistTasks = [];
 
     data.deleteList.forEach((item) => {
       if (item.type === 'table') {
@@ -25,10 +29,31 @@ function deleteData({ data, id }) {
           this.engine.columns[item.columnId].index = 0;
         }
       } else if (item.variableName) {
+        // $$ 持久变量先经 setVariable 统一入口清值，再删除 IndexedDB 记录，
+        // 否则下次执行会从存储里复活已删除的变量
+        if (item.variableName.startsWith('$$')) {
+          persistTasks.push(async () => {
+            try {
+              if (typeof this.setVariable === 'function') {
+                await this.setVariable(item.variableName, undefined);
+              }
+
+              const record = await dbStorage.variables.get({
+                name: item.variableName.slice(2),
+              });
+              if (record) await dbStorage.variables.delete(record.id);
+            } catch (error) {
+              console.error('删除持久变量失败:', error);
+            }
+          });
+        }
+
         delete this.engine.referenceData.variables[item.variableName];
         variableDeleted = true;
       }
     });
+
+    if (persistTasks.length) await Promise.allSettled(persistTasks);
 
     if (variableDeleted) this.engine.addRefDataSnapshot('variables');
 

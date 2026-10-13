@@ -15,7 +15,7 @@ async function forms(block) {
     let result = '';
 
     if (data.multiple) {
-      result = elements.map((element) => element.value || '');
+      result = Array.from(elements).map((element) => element.value || '');
     } else {
       result = elements.value || '';
     }

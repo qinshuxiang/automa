@@ -11,7 +11,58 @@ import dbStorage from '@/db/storage';
 import templating from './templating';
 import renderString from './templating/renderString';
 import { convertData, waitTabLoaded } from './helper';
-import injectContentScript from './injectContentScript';
+
+function withTimeoutAndStop(
+  promiseFactory,
+  timeoutMs = 30000,
+  isStopped = () => false
+) {
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+    let stopCheckId;
+    let settled = false;
+
+    const settle = (settleFn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      clearInterval(stopCheckId);
+      settleFn(value);
+    };
+
+    const checkStopped = () => {
+      if (!isStopped()) return false;
+
+      const error = new Error('执行已停止，已忽略迟到的网页响应');
+      error.executionStopped = true;
+      settle(reject, error);
+
+      return true;
+    };
+
+    if (checkStopped()) return;
+
+    timeoutId = setTimeout(() => {
+      const error = new Error(
+        '网页通信超时；页面可能已冻结或权限受限。操作结果未知，为避免重复提交已停止执行，请确认页面状态后再运行。'
+      );
+      error.deliveryUncertain = true;
+      settle(reject, error);
+    }, timeoutMs);
+    stopCheckId = setInterval(checkStopped, 100);
+
+    Promise.resolve()
+      .then(promiseFactory)
+      .then(
+        (result) => {
+          if (!checkStopped()) settle(resolve, result);
+        },
+        (error) => {
+          if (!checkStopped()) settle(reject, error);
+        }
+      );
+  });
+}
 
 function blockExecutionWrapper(blockHandler, blockData) {
   return new Promise((resolve, reject) => {
@@ -19,7 +70,7 @@ function blockExecutionWrapper(blockHandler, blockData) {
     const timeoutMs = blockData?.settings?.blockTimeout;
     if (timeoutMs && timeoutMs > 0) {
       timeout = setTimeout(() => {
-        reject(new Error('Timeout'));
+        reject(new Error('节点执行超时，操作结果未知；请确认页面状态后再运行'));
       }, timeoutMs);
     }
 
@@ -129,13 +180,24 @@ class WorkflowWorker {
     if (variableName.startsWith('$$')) {
       variableName = variableName.slice(2);
 
+      // 持久化写入内存变换后的最终值：
+      // $push 追加后必须写回完整数组，而不是被追加的单个元素，
+      // 否则下次执行读到的内容与数据类型都会被破坏
+      const persistedValue = vars[`$$${variableName}`];
+
       const findStorageVar = await dbStorage.variables.get({
         name: variableName,
       });
 
       if (findStorageVar)
-        await dbStorage.variables.update(findStorageVar.id, { value });
-      else await dbStorage.variables.add({ name: variableName, value });
+        await dbStorage.variables.update(findStorageVar.id, {
+          value: persistedValue,
+        });
+      else
+        await dbStorage.variables.add({
+          name: variableName,
+          value: persistedValue,
+        });
     }
 
     this.engine.addRefDataSnapshot('variables');
@@ -461,13 +523,6 @@ class WorkflowWorker {
 
     this.engine.history = [];
     this.engine.preloadScripts = [];
-    this.engine.columns = {
-      column: {
-        index: 0,
-        type: 'any',
-        name: this.settings?.defaultColumnName || 'column',
-      },
-    };
 
     this.activeTab = {
       url: '',
@@ -476,76 +531,161 @@ class WorkflowWorker {
       groupId: null,
       id: this.options?.tabId,
     };
+
+    // 错误重启时保留关联表数据、列索引与已加载变量：
+    // 此时 __tableLoaded 仍为真，destroy 会整表写回，
+    // 若在此清空成空表，会把关联表原有历史数据覆盖掉。
+    if (this.engine.__tableLoaded && this.engine.workflow?.connectedTable)
+      return;
+
+    this.engine.columns = {
+      column: {
+        index: 0,
+        type: 'any',
+        name: this.settings?.defaultColumnName || 'column',
+      },
+    };
     this.engine.referenceData = {
       table: [],
       loopData: {},
       workflow: {},
-      variables: this.engine.options?.variables || {},
+      variables: { ...(this.engine.options?.data?.variables || {}) },
+      secrets: this.engine.referenceData.secrets,
       globalData: this.engine.referenceData.globalData,
     };
   }
 
   async _sendMessageToTab(payload, options = {}, runBeforeLoad = false) {
-    try {
-      if (!this.activeTab.id) {
-        const error = new Error('no-tab');
-        error.workflowId = this.id;
-
-        throw error;
-      }
-
-      if (!runBeforeLoad) {
-        await waitTabLoaded({
-          tabId: this.activeTab.id,
-          ms: this.settings?.tabLoadTimeout ?? 30000,
-        });
-      }
-
-      const { executedBlockOnWeb, debugMode } = this.settings;
-      const messagePayload = {
-        isBlock: true,
-        debugMode,
-        executedBlockOnWeb,
-        loopEls: this.loopEls,
-        activeTabId: this.activeTab.id,
-        frameSelector: this.frameSelector,
-        ...payload,
-      };
-      const data = await browser.tabs.sendMessage(
-        this.activeTab.id,
-        messagePayload,
-        { frameId: this.activeTab.frameId, ...options }
-      );
-
-      return data;
-    } catch (error) {
-      console.error(error);
-      const noConnection = error.message?.includes(
-        'Could not establish connection'
-      );
-      const channelClosed = error.message?.includes('message channel closed');
-
-      if (noConnection || channelClosed) {
-        const isScriptInjected = await injectContentScript(
-          this.activeTab.id,
-          this.activeTab.frameId
-        );
-
-        if (isScriptInjected) {
-          const result = await this._sendMessageToTab(
-            payload,
-            options,
-            runBeforeLoad
-          );
-          return result;
-        }
-        error.message = 'Could not establish connection to the active tab';
-      } else if (error.message?.startsWith('No tab')) {
-        error.message = 'active-tab-removed';
-      }
+    if (this.engine.isDestroyed) throw new Error('执行已停止');
+    if (!this.activeTab.id) {
+      const error = new Error('no-tab');
+      error.workflowId = this.id;
 
       throw error;
     }
+
+    if (!runBeforeLoad) {
+      await waitTabLoaded({
+        tabId: this.activeTab.id,
+        ms: this.settings?.tabLoadTimeout ?? 30000,
+      });
+    }
+    if (this.engine.isDestroyed) throw new Error('执行已停止');
+
+    const { executedBlockOnWeb, debugMode } = this.settings;
+    const messagePayload = {
+      isBlock: true,
+      debugMode,
+      executedBlockOnWeb,
+      loopEls: this.loopEls,
+      activeTabId: this.activeTab.id,
+      frameSelector: this.frameSelector,
+      ...payload,
+      executionId: this.engine.id,
+    };
+    this.engine.contentExecutionTabs.add(this.activeTab.id);
+
+    const blockData = Array.isArray(payload.data)
+      ? payload.data[0]?.data
+      : payload.data;
+    const timeoutMs = Math.min(
+      Math.max(
+        Math.max(
+          Number(this.settings?.messageTimeout) || 30000,
+          (Number(blockData?.timeout) || 0) + 5000,
+          (Number(blockData?.waitSelectorTimeout) || 0) + 5000
+        ),
+        1000
+      ),
+      300000
+    );
+
+    return (async ({
+      send,
+      recover,
+      timeoutMs: timeout = 30000,
+      isStopped,
+    }) => {
+      let recovered = false;
+
+      for (;;) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          return await withTimeoutAndStop(send, timeout, isStopped);
+        } catch (error) {
+          const noConnection =
+            /Could not establish connection.*Receiving end does not exist/i.test(
+              error.message || ''
+            );
+
+          if (noConnection && !recovered && !isStopped?.()) {
+            recovered = true;
+            const recoverOk = await withTimeoutAndStop(
+              recover,
+              Math.min(timeout, 10000),
+              isStopped
+            );
+
+            if (recoverOk) {
+              // eslint-disable-next-line no-continue
+              continue;
+            }
+          }
+
+          if (
+            /message (?:port|channel) closed|The message port closed/i.test(
+              error.message || ''
+            )
+          ) {
+            error.deliveryUncertain = true;
+            error.message =
+              '网页通信通道已关闭，操作结果未知；为避免重复提交，请确认页面状态后再运行。';
+          }
+
+          throw error;
+        }
+      }
+    })({
+      send: () =>
+        browser.tabs.sendMessage(this.activeTab.id, messagePayload, {
+          frameId: this.activeTab.frameId,
+          ...options,
+        }),
+      recover: async () => {
+        try {
+          const frameId =
+            typeof this.activeTab.frameId === 'number'
+              ? this.activeTab.frameId
+              : 0;
+
+          await withTimeoutAndStop(
+            () =>
+              browser.tabs.executeScript(this.activeTab.id, {
+                frameId,
+                runAt: 'document_start',
+                file: './contentScript.bundle.js',
+              }),
+            10000
+          );
+          await withTimeoutAndStop(
+            () =>
+              browser.tabs.sendMessage(
+                this.activeTab.id,
+                { type: 'content-script-exists' },
+                { frameId }
+              ),
+            5000
+          );
+
+          return true;
+        } catch (error) {
+          console.error(error);
+          return false;
+        }
+      },
+      isStopped: () => this.engine.isDestroyed,
+      timeoutMs,
+    });
   }
 }
 

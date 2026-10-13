@@ -61,12 +61,18 @@ async function takeScreenshot({ data, id, label }) {
       }
 
       let tab = null;
+      let screenshotWindowId = null;
       const isChrome = BROWSER_TYPE === 'chrome';
       const captureTab = async () => {
         let result = null;
 
         if (isChrome) {
-          result = await browser.tabs.captureVisibleTab(tab.windowId, options);
+          // 使用 tabs.update 返回值的 windowId：标签页可能已被移动到其他窗口，
+          // 截图时以实际所在窗口为准
+          result = await browser.tabs.captureVisibleTab(
+            screenshotWindowId ?? (tab && tab.windowId),
+            options
+          );
         } else {
           result = await browser.tabs.captureTab(this.activeTab.id, options);
         }
@@ -85,7 +91,15 @@ async function takeScreenshot({ data, id, label }) {
         }
       }
 
-      await browser.tabs.update(this.activeTab.id, { active: true });
+      await (async () => {
+        const updatedTab = await browser.tabs.update(this.activeTab.id, {
+          active: true,
+        });
+
+        if (updatedTab && updatedTab.windowId) {
+          screenshotWindowId = updatedTab.windowId;
+        }
+      })();
       await waitTabLoaded({ tabId: this.activeTab.id, listenError: true });
 
       screenshot = await (data.fullPage ||

@@ -7,7 +7,7 @@ async function link(block) {
     throw new Error('element-not-found');
   }
   if (element.tagName !== 'A') {
-    throw new Error('Element is not a link');
+    throw new Error('此元素不是链接');
   }
 
   markElement(element, block);

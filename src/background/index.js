@@ -4,12 +4,20 @@ import { sleep } from '@/utils/helper';
 import getFile, { readFileAsBase64 } from '@/utils/getFile';
 import automa from '@business';
 import { workflowState } from '@/workflowEngine';
+import {
+  markRestoreGateReady,
+  checkRestoreJournal,
+} from '@/utils/backupRestore';
 import { registerWorkflowTrigger } from '../utils/workflowTrigger';
 import BackgroundUtils from './BackgroundUtils';
 import BackgroundWorkflowUtils from './BackgroundWorkflowUtils';
 import BackgroundEventsListeners from './BackgroundEventsListeners';
 
 const isFirefox = BROWSER_TYPE === 'firefox';
+
+// 启动初始化：后台立即解除恢复门禁（不做恒定阻塞），再检查未完成的恢复日志
+markRestoreGateReady();
+checkRestoreJournal().catch(console.error);
 
 browser.alarms.onAlarm.addListener(BackgroundEventsListeners.onAlarms);
 
@@ -254,8 +262,10 @@ if (!isMV2) {
 
   document.body.appendChild(sandboxIframe);
 
-  window.addEventListener('message', async ({ data }) => {
-    if (data?.type !== 'automa-fetch') return;
+  window.addEventListener('message', async ({ data, source }) => {
+    // 只接受沙箱 iframe 自身发来的消息，扩展页/内容脚本伪造的来源一律拒绝
+    if (source !== sandboxIframe.contentWindow || data?.type !== 'automa-fetch')
+      return;
 
     const sendResponse = (result) => {
       sandboxIframe.contentWindow.postMessage(

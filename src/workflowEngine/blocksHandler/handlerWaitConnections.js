@@ -46,7 +46,7 @@ async function waitConnections({ data, id }, { prevBlock }) {
           ).includes(data.flowBlockId);
 
           if (!connectionExist) {
-            reject(new Error(`No specific flow selected`));
+            reject(new Error('未选择指定流程'));
             return;
           }
         }
