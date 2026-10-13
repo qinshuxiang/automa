@@ -21,7 +21,7 @@ export function useBlockValidation(blockId, data) {
 
             errors.value =
               errorsStr.trim() &&
-              `Issues: <ol class='list-disc list-inside'>${errorsStr}</ol>`;
+              `问题：<ol class='list-disc list-inside'>${errorsStr}</ol>`;
           })
           .catch((error) => {
             console.error(error);

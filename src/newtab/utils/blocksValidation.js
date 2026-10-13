@@ -1,4 +1,9 @@
 import browser from 'webextension-polyfill';
+import {
+  INSERT_DATA_ACTIONS,
+  isValidCellRange,
+  resolveInsertFileType,
+} from '@/utils/insertData';
 
 const checkPermissions = (permissions) =>
   browser.permissions.contains({ permissions });
@@ -13,13 +18,13 @@ export async function validateTrigger(data) {
   const checkValue = (value, { name, location }) => {
     if (value && value.trim()) return;
 
-    errors.push(`"${name}" is empty in the ${location}`);
+    errors.push(`${location}中的“${name}”为空`);
   };
   const triggersValidation = {
     'cron-job': (triggerData) => {
       checkValue(triggerData.expression, {
-        name: 'Expression',
-        location: 'Cron job trigger',
+        name: '表达式',
+        location: '定时任务触发器',
       });
     },
     'context-menu': async (triggerData) => {
@@ -27,32 +32,30 @@ export async function validateTrigger(data) {
       const hasPermission = await checkPermissions([permission]);
 
       if (!hasPermission) {
-        errors.push(
-          "Doesn't have permission for the Context menu trigger (ignore if you already grant the permissions)"
-        );
+        errors.push('缺少右键菜单触发器所需权限（若已授权可忽略）');
       } else {
         checkValue(triggerData.contextMenuName, {
-          name: 'Context menu name',
-          location: 'Context menu trigger',
+          name: '右键菜单名称',
+          location: '右键菜单触发器',
         });
       }
     },
     date: (triggerData) => {
       checkValue(triggerData.date, {
-        name: 'Date',
-        location: 'On a specific date tigger',
+        name: '日期',
+        location: '指定日期触发器',
       });
     },
     'visit-web': (triggerData) => {
       checkValue(triggerData.url, {
-        name: 'URL',
-        location: 'Visit web trigger',
+        name: '网址',
+        location: '访问网页触发器',
       });
     },
     'keyboard-shortcut': (triggerData) => {
       checkValue(triggerData.shortcut, {
-        name: 'Shortcut',
-        location: 'Shortcut trigger',
+        name: '快捷键',
+        location: '快捷键触发器',
       });
     },
   };
@@ -71,13 +74,13 @@ export async function validateTrigger(data) {
 }
 
 export async function validateExecuteWorkflow(data) {
-  if (isEmptyStr(data.workflowId)) return ['No workflow selected'];
+  if (isEmptyStr(data.workflowId)) return ['未选择工作流'];
 
   return [];
 }
 
 export async function validateNewTab(data) {
-  if (isEmptyStr(data.url)) return ['URL is empty'];
+  if (isEmptyStr(data.url)) return ['网址为空'];
 
   return [];
 }
@@ -86,11 +89,10 @@ export async function validateSwitchTab(data) {
   const errors = [];
   const validateItems = {
     'match-patterns': () => {
-      if (isEmptyStr(data.matchPattern))
-        errors.push('The Match patterns is empty');
+      if (isEmptyStr(data.matchPattern)) errors.push('匹配规则为空');
     },
     'tab-title': () => {
-      if (isEmptyStr(data.tabTitle)) errors.push('The Tab title is empty');
+      if (isEmptyStr(data.tabTitle)) errors.push('标签页标题为空');
     },
   };
 
@@ -100,14 +102,14 @@ export async function validateSwitchTab(data) {
 }
 
 export async function validateProxy(data) {
-  if (isEmptyStr(data.host)) return ['The Host is empty'];
+  if (isEmptyStr(data.host)) return ['主机地址为空'];
 
   return [];
 }
 
 export async function validateCloseTab(data) {
   if (data.closeType === 'tab' && !data.activeTab && isEmptyStr(data.url)) {
-    return ['The Match patterns is empty'];
+    return ['匹配规则为空'];
   }
 
   return [];
@@ -115,14 +117,14 @@ export async function validateCloseTab(data) {
 
 export async function validateTakeScreenshot(data) {
   if (data.type === 'element' && isEmptyStr(data.selector)) {
-    return ['The CSS selector is empty'];
+    return ['CSS 选择器为空'];
   }
 
   return [];
 }
 
 export async function validateInteractionBasic(data) {
-  if (isEmptyStr(data.selector)) return ['The Selector is empty'];
+  if (isEmptyStr(data.selector)) return ['选择器为空'];
 
   return [];
 }
@@ -131,15 +133,10 @@ export async function validateExportData(data) {
   const errors = [];
 
   const hasPermission = await checkPermissions(['downloads']);
-  if (!hasPermission)
-    errors.push(
-      "Don't have download permission (ignore if you already grant the permissions)"
-    );
+  if (!hasPermission) errors.push('缺少下载权限（若已授权可忽略）');
 
   if (data.dataToExport === 'variable' && isEmptyStr(data.variableName)) {
-    errors.push('The Variable name is empty');
-  } else if (data.dataToExport === 'google-sheets' && isEmptyStr(data.refKey)) {
-    errors.push('The Reference key is empty');
+    errors.push('变量名称为空');
   }
 
   return errors;
@@ -148,41 +145,71 @@ export async function validateExportData(data) {
 export async function validateAttributeValue(data) {
   const errors = [];
 
-  if (isEmptyStr(data.selector)) errors.push('The Selector is empty');
-  if (isEmptyStr(data.attributeName))
-    errors.push('The Attribute name is empty');
-
-  return errors;
-}
-
-export async function validateGoogleSheets(data) {
-  const errors = [];
-
-  if (isEmptyStr(data.spreadsheetId))
-    errors.push('The Spreadsheet Id is empty');
-  if (isEmptyStr(data.range)) errors.push('The Range is empty');
+  if (isEmptyStr(data.selector)) errors.push('选择器为空');
+  if (isEmptyStr(data.attributeName)) errors.push('属性名称为空');
 
   return errors;
 }
 
 export async function validateWebhook(data) {
-  if (isEmptyStr(data.url)) return ['The URL is empty'];
+  if (isEmptyStr(data.url)) return ['网址为空'];
 
   return [];
 }
 
+export async function validateInsertData(data) {
+  const errors = [];
+
+  (data.dataList || []).forEach((item, index) => {
+    const prefix = `第 ${index + 1} 项`;
+
+    // 目标类型先校验：非法显式类型直接报错，与执行引擎、归一化逻辑一致
+    if (
+      item.type != null &&
+      item.type !== 'table' &&
+      item.type !== 'variable'
+    ) {
+      errors.push(`${prefix}的导入目标类型无效`);
+      return;
+    }
+
+    if (item.type === 'variable' && isEmptyStr(item.name)) {
+      errors.push(`${prefix}的变量名称为空`);
+    } else if (item.type !== 'variable' && isEmptyStr(item.name)) {
+      errors.push(`${prefix}未选择表格列`);
+    }
+
+    if (!item.isFile) return;
+
+    if (isEmptyStr(item.filePath)) errors.push(`${prefix}的文件路径为空`);
+
+    const action = item.action || item.csvAction || 'default';
+    if (!INSERT_DATA_ACTIONS.includes(action)) {
+      errors.push(`${prefix}的动作“${String(action)}”无效`);
+    }
+
+    // 仅 Excel 格式的 json/json-header 动作校验单元格范围
+    const range =
+      resolveInsertFileType(item.filePath, item).format === 'excel' &&
+      ['json', 'json-header'].includes(action)
+        ? (item.xlsRange || '').trim()
+        : '';
+
+    if (range && !isValidCellRange(range)) {
+      errors.push(`${prefix}的单元格范围“${range}”无效（示例：A1:C10）`);
+    }
+  });
+
+  return errors;
+}
+
 export async function validateLoopData(data) {
   const errors = [];
-  if (isEmptyStr(data.loopId)) errors.push('The Loop id is empty');
+  if (isEmptyStr(data.loopId)) errors.push('循环标识为空');
 
   const loopThroughItems = {
-    'google-sheets': () => {
-      if (isEmptyStr(data.referenceKey))
-        errors.push('The Reference key is empty');
-    },
     variable: () => {
-      if (isEmptyStr(data.variableName))
-        errors.push('The Variable name is empty');
+      if (isEmptyStr(data.variableName)) errors.push('变量名称为空');
     },
   };
   const validateItem = loopThroughItems[data.loopThrough];
@@ -193,14 +220,14 @@ export async function validateLoopData(data) {
 
 export async function validateLoopElements(data) {
   const errors = [];
-  if (isEmptyStr(data.loopId)) errors.push('The Loop id is empty');
-  if (isEmptyStr(data.selector)) errors.push('The Selector is empty');
+  if (isEmptyStr(data.loopId)) errors.push('循环标识为空');
+  if (isEmptyStr(data.selector)) errors.push('选择器为空');
 
   if (
     ['click-element', 'click-link'].includes(data.loadMoreAction) &&
     isEmptyStr(data.actionElSelector)
   ) {
-    errors.push('The Selector for loading more elements is empty');
+    errors.push('用于加载更多元素的选择器为空');
   }
 
   return errors;
@@ -212,17 +239,14 @@ export async function validateClipboard() {
     : ['clipboardRead'];
   const hasPermission = await checkPermissions(permissions);
 
-  if (!hasPermission)
-    return [
-      "Don't have permission to access the clipboard (ignore if you already grant the permissions)",
-    ];
+  if (!hasPermission) return ['缺少剪贴板访问权限（若已授权可忽略）'];
 
   return [];
 }
 
 export async function validateSwitchTo(data) {
   if (data.windowType === 'iframe' && isEmptyStr(data.selector)) {
-    return ['The Selector for Iframe is empty'];
+    return ['内嵌框架选择器为空'];
   }
 
   return [];
@@ -231,10 +255,10 @@ export async function validateSwitchTo(data) {
 export async function validateUploadFile(data) {
   const errors = [];
 
-  if (isEmptyStr(data.selector)) errors.push('The Selector is empty');
+  if (isEmptyStr(data.selector)) errors.push('选择器为空');
 
   const someInputsEmpty = data.filePaths.some((path) => isEmptyStr(path));
-  if (someInputsEmpty) errors.push('Some of the file paths is empty');
+  if (someInputsEmpty) errors.push('部分文件路径为空');
 
   return errors;
 }
@@ -243,12 +267,9 @@ export async function validateSaveAssets(data) {
   const errors = [];
 
   const hasPermission = await checkPermissions(['downloads']);
-  if (!hasPermission)
-    errors.push(
-      "Don't have download permission (ignore if you already grant the permissions)"
-    );
+  if (!hasPermission) errors.push('缺少下载权限（若已授权可忽略）');
   else if (isEmptyStr(data.selector) && data.type === 'element')
-    errors.push('The Selector is empty');
+    errors.push('选择器为空');
 
   return errors;
 }
@@ -260,22 +281,21 @@ export async function validatePressKey(data) {
     !data.action || (data.action === 'press-key' && isEmptyStr(data.keys));
   const isMultipleKeysEmpty =
     data.action === 'multiple-keys' && isEmptyStr(data.keysToPress);
-  if (isKeyEmpty || isMultipleKeysEmpty)
-    errors.push('The Keys to press is empty');
+  if (isKeyEmpty || isMultipleKeysEmpty) errors.push('待按下的按键为空');
 
   return errors;
 }
 
 export async function validateNotification() {
   const hasPermission = await checkPermissions(['notifications']);
-  if (!hasPermission) return ["Don't have notifications permissions"];
+  if (!hasPermission) return ['缺少通知权限'];
 
   return [];
 }
 
 export async function validateCookie() {
   const hasPermission = await checkPermissions(['cookies']);
-  if (!hasPermission) return ["Don't have cookies permissions"];
+  if (!hasPermission) return ['缺少 Cookie 权限'];
 
   return [];
 }
@@ -341,10 +361,6 @@ export default {
     ...defaultOptions,
     func: validateInteractionBasic,
   },
-  'google-sheets': {
-    ...defaultOptions,
-    func: validateGoogleSheets,
-  },
   'element-exists': {
     ...defaultOptions,
     func: validateInteractionBasic,
@@ -352,6 +368,10 @@ export default {
   webhook: {
     ...defaultOptions,
     func: validateWebhook,
+  },
+  'insert-data': {
+    ...defaultOptions,
+    func: validateInsertData,
   },
   'loop-data': {
     ...defaultOptions,
@@ -362,7 +382,6 @@ export default {
     func: validateLoopElements,
   },
   clipboard: {
-    ...defaultOptions,
     once: true,
     func: validateClipboard,
   },

@@ -21,7 +21,7 @@ export default async function (str, data, isPopup = true, options = {}) {
 
   if (evaluateJS && !isFirefox && (isMV2 || isPopup)) {
     const refKeysRegex =
-      /(variables|table|secrets|loopData|workflow|googleSheets|globalData)@/g;
+      /(variables|table|secrets|loopData|workflow|globalData)@/g;
     const strToRender = str.replace(refKeysRegex, '$1.');
 
     renderedValue = await messageSandbox('blockExpression', {

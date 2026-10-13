@@ -11,11 +11,11 @@
       variant="accent"
       @click="showModal = !showModal"
     >
-      Insert data ({{ dataList.length }})
+      {{ t('workflow.blocks.insert-data.name') }} ({{ dataList.length }})
     </ui-button>
     <ui-modal
       v-model="showModal"
-      title="Insert data"
+      :title="t('workflow.blocks.insert-data.name')"
       padding="p-0"
       content-class="max-w-3xl insert-data-modal"
     >
@@ -69,31 +69,43 @@
             />
           </div>
           <div class="p-2">
-            <div v-if="hasFileAccess && item.isFile" class="flex items-end">
+            <div v-if="item.isFile" class="flex items-end">
               <edit-autocomplete class="w-full">
                 <ui-input
                   v-model="item.filePath"
                   class="w-full"
-                  :placeholder="
-                    isFirefox ? 'File URL' : 'File absolute path/File URL'
-                  "
+                  :placeholder="t('workflow.blocks.insert-data.filePath')"
                 />
               </edit-autocomplete>
+              <div class="ml-2 shrink-0">
+                <label class="mb-1 block text-sm">文件类型</label>
+                <ui-select
+                  :model-value="item.fileType || 'auto'"
+                  aria-label="文件类型"
+                  @change="item.fileType = $event"
+                >
+                  <option value="auto">自动</option>
+                  <option value="excel">Excel</option>
+                  <option value="csv">CSV</option>
+                </ui-select>
+              </div>
               <template
                 v-if="
-                  /.xlsx?$/.test(item.filePath) &&
-                  (item.action || item.csvAction)?.includes?.('json')
+                  isExcelFile(item.filePath, item) &&
+                  ['json', 'json-header'].includes(
+                    item.action || item.csvAction || ''
+                  )
                 "
               >
                 <ui-input
                   v-model="item.xlsSheet"
-                  label="Sheet (optional)"
+                  :label="t('workflow.blocks.insert-data.sheet')"
                   class="ml-2"
                   placeholder="Sheet1"
                 />
                 <ui-input
                   v-model="item.xlsRange"
-                  label="Range (optional)"
+                  :label="t('workflow.blocks.insert-data.range')"
                   class="ml-2"
                   placeholder="A1:C10"
                 />
@@ -102,31 +114,27 @@
             <edit-autocomplete v-else class="w-full">
               <ui-textarea
                 v-model="item.value"
-                placeholder="value"
-                title="value"
+                :placeholder="t('common.value')"
+                :title="t('common.value')"
                 class="w-full"
               />
             </edit-autocomplete>
             <div class="mt-2 flex items-center">
               <ui-button
-                v-tooltip="
-                  hasFileAccess
-                    ? 'Import file'
-                    : 'Don\'t have access, click to learn more'
-                "
+                v-tooltip="t('workflow.blocks.insert-data.importFile')"
                 :class="{ 'text-primary': item.isFile }"
                 icon
-                @click="setAsFile(item)"
+                @click="item.isFile = !item.isFile"
               >
                 <v-remixicon name="riFileLine" />
               </ui-button>
-              <template v-if="hasFileAccess && item.isFile">
+              <template v-if="item.isFile">
                 <ui-button class="ml-2" @click="previewData(index, item)">
-                  Preview data
+                  {{ t('workflow.blocks.insert-data.preview') }}
                 </ui-button>
                 <ui-button
                   v-if="previewState.itemId === index"
-                  v-tooltip="'Clear preview'"
+                  v-tooltip="t('workflow.blocks.insert-data.clearPreview')"
                   class="ml-2"
                   icon
                   @click="clearPreview"
@@ -136,23 +144,41 @@
                 <div class="grow" />
                 <ui-select
                   :model-value="item.action || item.csvAction"
-                  placeholder="File Action"
+                  :placeholder="t('common.action')"
                   @change="item.action = $event"
                 >
-                  <option value="default">Default</option>
-                  <option value="base64">Read as base64</option>
+                  <option value="default">
+                    {{ t('workflow.blocks.insert-data.default') }}
+                  </option>
+                  <option value="base64">
+                    {{ t('workflow.blocks.insert-data.base64') }}
+                  </option>
                   <optgroup
-                    v-if="/.(csv|xlsx?)$/.test(item.filePath)"
-                    label="CSV/Excel File"
+                    v-if="isCsvOrExcelFile(item.filePath, item)"
+                    :label="t('workflow.blocks.insert-data.csvExcel')"
                   >
-                    <option value="json">Read as JSON</option>
+                    <option value="json">
+                      {{ t('workflow.blocks.insert-data.json') }}
+                    </option>
                     <option value="json-header">
-                      Read as JSON with headers
+                      {{ t('workflow.blocks.insert-data.jsonHeader') }}
                     </option>
                   </optgroup>
                 </ui-select>
               </template>
             </div>
+            <p
+              v-if="previewState.itemId === index && previewState.loading"
+              class="mt-2 text-sm text-gray-500"
+            >
+              正在读取与解析文件…
+            </p>
+            <p
+              v-if="previewState.itemId === index && previewState.warning"
+              class="mt-2 text-sm text-orange-600 dark:text-orange-400"
+            >
+              {{ previewState.warning }}
+            </p>
             <shared-codemirror
               v-if="previewState.itemId === index"
               :model-value="previewState.data"
@@ -168,17 +194,32 @@
           {{ t('common.add') }}
         </ui-button>
       </ul>
+      <p v-if="!hasFileAccess" class="px-4 pb-4 text-sm text-gray-500">
+        {{ t('workflow.blocks.insert-data.noFileAccess') }}
+      </p>
     </ui-modal>
   </div>
 </template>
 <script setup>
-import { ref, watch, inject, shallowReactive, defineAsyncComponent } from 'vue';
+import {
+  ref,
+  watch,
+  inject,
+  shallowReactive,
+  defineAsyncComponent,
+  onUnmounted,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
-import { read as readXlsx, utils as utilsXlsx } from 'xlsx';
-import Papa from 'papaparse';
 import browser from 'webextension-polyfill';
-import getFile, { readFileAsBase64 } from '@/utils/getFile';
+import {
+  normalizeInsertItem,
+  readInsertFile,
+  parseInsertData,
+  isExcelFile,
+  isCsvOrExcelFile,
+  previewLimits,
+} from '@/utils/insertData';
 import EditAutocomplete from './EditAutocomplete.vue';
 
 const SharedCodemirror = defineAsyncComponent(() =>
@@ -193,8 +234,6 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:data']);
 
-const isFirefox = BROWSER_TYPE === 'firefox';
-
 const { t } = useI18n();
 const toast = useToast();
 
@@ -207,15 +246,23 @@ const dataList = ref(JSON.parse(JSON.stringify(props.data.dataList)));
 const previewState = shallowReactive({
   data: '',
   itemId: '',
+  warning: '',
+  loading: false,
 });
+const previewSequence = ref(0);
+const previewAbort = ref(null);
 
 function clearPreview() {
+  // 递增序号并中止在途读取：旧结果不再回填
+  previewSequence.value += 1;
+  if (previewAbort.value) {
+    previewAbort.value.abort();
+    previewAbort.value = null;
+  }
   previewState.itemId = '';
   previewState.data = '';
-}
-function removeItem(index) {
-  dataList.value.splice(index, 1);
-  clearPreview();
+  previewState.warning = '';
+  previewState.loading = false;
 }
 function updateData(value) {
   emit('update:data', { ...props.data, ...value });
@@ -226,6 +273,7 @@ function addItem() {
     name: '',
     value: '',
     filePath: '',
+    fileType: 'auto',
     isFile: false,
     action: 'default',
   });
@@ -237,77 +285,111 @@ function changeItemType(index, type) {
     name: '',
   };
 }
-function setAsFile(item) {
-  if (!hasFileAccess.value) {
-    window.open('https://docs.automa.site/blocks/insert-data.html#import-file');
+async function previewData(index, item) {
+  // 含模板变量的路径只能在运行时解析，预览无意义
+  if (/\{\{[\s\S]*?\}\}/.test(item.filePath || '')) {
+    toast.error('变量路径需在工作流运行时解析，请运行后查看结果');
     return;
   }
 
-  item.isFile = !item.isFile;
-}
-async function previewData(index, item) {
+  const sequence = previewSequence.value + 1;
+  previewSequence.value = sequence;
+  if (previewAbort.value) previewAbort.value.abort();
+
+  const controller = new AbortController();
+  previewAbort.value = controller;
+
+  const itemSnapshot = JSON.stringify(item);
+  previewState.itemId = index;
+  previewState.loading = true;
+  previewState.data = '';
+  previewState.warning = '';
+
   try {
     const path = item.filePath || '';
-    const isExcel = /.xlsx?$/.test(path);
-    const isJSON = path.endsWith('.json');
-
-    const action = item.action || item.csvAction || 'default';
-    let responseType = 'text';
-
-    if (isJSON) responseType = 'json';
-    else if (action === 'base64' || (isExcel && action !== 'default'))
-      responseType = 'blob';
-
-    let result = await getFile(path, {
-      responseType,
-      returnValue: true,
-    });
-
-    const readAsJson = action.includes('json');
-
-    if (action === 'base64') {
-      result = await readFileAsBase64(result);
-    } else if (result && path.endsWith('.csv') && readAsJson) {
-      const parsedCSV = Papa.parse(result, {
-        header: action.includes('header'),
-      });
-      result = JSON.stringify(parsedCSV.data || [], null, 2);
-    } else if (isJSON) {
-      result = JSON.stringify(result, null, 2);
-    } else if (isExcel && readAsJson) {
-      const base64Xls = await readFileAsBase64(result);
-      const wb = readXlsx(base64Xls.slice(base64Xls.indexOf(',')), {
-        type: 'base64',
-      });
-
-      const inputtedSheet = (item.xlsSheet || '').trim();
-      const sheetName = wb.SheetNames.includes(inputtedSheet)
-        ? inputtedSheet
-        : wb.SheetNames[0];
-
-      const options = {};
-      if (item.xlsRange) options.range = item.xlsRange;
-      if (!action.includes('header')) options.header = 1;
-
-      const sheetData = utilsXlsx.sheet_to_json(wb.Sheets[sheetName], options);
-      result = JSON.stringify(sheetData, null, 2);
+    if (!/^https?:\/\//i.test(path) && !hasFileAccess.value) {
+      throw new Error(t('workflow.blocks.insert-data.noFileAccess'));
     }
 
-    previewState.itemId = index;
-    previewState.data = result;
+    const { item: normalizedItem, warnings: normalizeWarnings } =
+      normalizeInsertItem(item);
+    const readResult = await readInsertFile(path, normalizedItem, {
+      signal: controller.signal,
+    });
+    const {
+      value,
+      metadata,
+      warnings: parseWarnings,
+    } = await parseInsertData(readResult, normalizedItem, {
+      purpose: 'preview',
+      signal: controller.signal,
+    });
+
+    // 序号变化或配置已修改：丢弃过期结果
+    const currentItem = dataList.value[index];
+    if (
+      sequence !== previewSequence.value ||
+      !currentItem ||
+      JSON.stringify(currentItem) !== itemSnapshot
+    ) {
+      return;
+    }
+
+    const messages = [...normalizeWarnings, ...parseWarnings].map(
+      (warning) => warning.message
+    );
+    if (metadata.sheet) {
+      messages.unshift(`实际工作表：${metadata.sheet}`);
+    }
+    if (metadata.truncated?.rows) {
+      messages.push(
+        `仅展示前 ${metadata.previewRows} 行（如有），完整数据以执行结果为准`
+      );
+    }
+    if (metadata.truncated?.columns) {
+      messages.push(`列数超过 ${previewLimits.columns}，已截断展示`);
+    }
+
+    let text =
+      typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    if (text.length > previewLimits.chars) {
+      text = text.slice(0, previewLimits.chars);
+      messages.push('内容超长，已截断展示');
+    }
+
+    previewState.data = text;
+    previewState.warning = messages.join('；');
   } catch (error) {
+    if (sequence !== previewSequence.value) return;
+
     console.error(error);
     toast.error(error.message);
+  } finally {
+    if (sequence === previewSequence.value) {
+      previewState.loading = false;
+    }
   }
 }
 
-browser.extension.isAllowedFileSchemeAccess().then((value) => {
-  hasFileAccess.value = isFirefox ? true : value;
+browser.extension
+  .isAllowedFileSchemeAccess()
+  .then((value) => {
+    hasFileAccess.value = value;
+  })
+  .catch((error) => {
+    toast.error(error.message);
+  });
+
+onUnmounted(clearPreview);
+
+watch(showModal, (value) => {
+  if (!value) clearPreview();
 });
 
 watch(
   dataList,
   (value) => {
+    if (previewState.itemId !== '') clearPreview();
     updateData({ dataList: value });
   },
   { deep: true }

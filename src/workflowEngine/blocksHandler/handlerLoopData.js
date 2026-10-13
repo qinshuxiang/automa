@@ -21,13 +21,22 @@ async function loopData({ data, id }, { refData }) {
         $index: index,
       };
     } else {
+      // 数字循环范围先校验：起点必须小于或等于终点，且均为有限数值
+      if (
+        data.loopThrough === 'numbers' &&
+        (!Number.isFinite(+data.fromNumber) ||
+          !Number.isFinite(+data.toNumber) ||
+          +data.fromNumber > +data.toNumber)
+      ) {
+        throw new Error('数字循环范围无效：起点必须小于或等于终点');
+      }
+
       const maxLoop = +data.maxLoop || 0;
       const getLoopData = {
-        numbers: () => data.fromNumber,
+        numbers: () => +data.fromNumber,
         table: () => refData.table,
         'custom-data': () => JSON.parse(data.loopData),
         'data-columns': () => refData.table,
-        'google-sheets': () => refData.googleSheets[data.referenceKey],
         variable: () => {
           let variableVal = objectPath.get(
             refData.variables,
@@ -83,7 +92,7 @@ async function loopData({ data, id }, { refData }) {
         },
       };
 
-      const currLoopData = await getLoopData[data.loopThrough]();
+      let currLoopData = await getLoopData[data.loopThrough]();
       let index = 0;
 
       if (data.loopThrough !== 'numbers') {
@@ -99,8 +108,25 @@ async function loopData({ data, id }, { refData }) {
           index = startIndex;
         }
 
+        // 反转基于副本，避免污染 refData 中的原始数据
         if (data.reverseLoop && data.loopThrough !== 'elements') {
-          currLoopData.reverse();
+          currLoopData = currLoopData.slice().reverse();
+        }
+
+        // 数据已用完时跳到循环断点（若有），否则结束
+        if (index >= currLoopData.length) {
+          const breakpoint = Object.values(this.engine.blocks).find(
+            (block) =>
+              block.label === 'loop-breakpoint' &&
+              block.data.loopId === data.loopId
+          );
+
+          return {
+            data: '',
+            nextBlockId: breakpoint
+              ? this.getBlockConnections(breakpoint.id)
+              : [],
+          };
         }
       }
 
@@ -112,14 +138,14 @@ async function loopData({ data, id }, { refData }) {
         type: data.loopThrough,
         maxLoop:
           data.loopThrough === 'numbers'
-            ? data.toNumber + 1 - data.fromNumber
+            ? +data.toNumber + 1 - +data.fromNumber
             : maxLoop,
       };
       /* eslint-disable-next-line */
       refData.loopData[data.loopId] = {
         data:
           data.loopThrough === 'numbers'
-            ? data.fromNumber
+            ? +data.fromNumber
             : currLoopData[index],
         $index: index,
       };

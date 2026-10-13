@@ -140,15 +140,8 @@ const state = shallowReactive({
 const showTextToCopy = computed(() => {
   if (loopBlocks.includes(block.details.id) && props.data.loopId) {
     return {
-      name: 'Loop id',
+      name: '循环标识',
       value: props.data.loopId,
-    };
-  }
-
-  if (block.details.id === 'google-sheets' && props.data.refKey) {
-    return {
-      name: 'Reference key',
-      value: props.data.refKey,
     };
   }
 
@@ -165,6 +158,10 @@ function insertToClipboard(text) {
 }
 function getBlockName() {
   const key = `workflow.blocks.${block.details.id}.name`;
+
+  if (block.details.editComponent === 'EditUnsupported') {
+    return block.details.name;
+  }
 
   return te(key) ? t(key) : block.details.name;
 }

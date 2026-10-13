@@ -3,9 +3,7 @@ import Welcome from './pages/Welcome.vue';
 import Packages from './pages/Packages.vue';
 import Workflows from './pages/workflows/index.vue';
 import WorkflowContainer from './pages/Workflows.vue';
-import WorkflowHost from './pages/workflows/Host.vue';
 import WorkflowDetails from './pages/workflows/[id].vue';
-import WorkflowShared from './pages/workflows/Shared.vue';
 import ScheduledWorkflow from './pages/ScheduledWorkflow.vue';
 import Storage from './pages/Storage.vue';
 import StorageTables from './pages/storage/Tables.vue';
@@ -63,16 +61,6 @@ const routes = [
         name: 'team-workflows',
         path: '/teams/:teamId/workflows/:id',
         component: WorkflowDetails,
-      },
-      {
-        name: 'workflow-host',
-        path: '/workflows/:id/host',
-        component: WorkflowHost,
-      },
-      {
-        name: 'workflow-shared',
-        path: '/workflows/:id/shared',
-        component: WorkflowShared,
       },
     ],
   },

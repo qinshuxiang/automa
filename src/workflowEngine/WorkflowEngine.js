@@ -83,7 +83,6 @@ class WorkflowEngine {
       secrets: {},
       loopData: {},
       workflow: {},
-      googleSheets: {},
       globalData: parseJSON(globalData, globalData),
     };
 

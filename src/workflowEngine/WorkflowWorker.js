@@ -480,7 +480,6 @@ class WorkflowWorker {
       table: [],
       loopData: {},
       workflow: {},
-      googleSheets: {},
       variables: this.engine.options?.variables || {},
       globalData: this.engine.referenceData.globalData,
     };

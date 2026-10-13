@@ -6,7 +6,6 @@ import browser from 'webextension-polyfill';
 import dayjs from 'dayjs';
 import { fetchApi } from '@/utils/api';
 import { tasks } from '@/utils/shared';
-import firstWorkflows from '@/utils/firstWorkflows';
 import {
   cleanWorkflowTriggers,
   registerWorkflowTrigger,
@@ -117,20 +116,12 @@ export const useWorkflowStore = defineStore('workflow', {
         'isFirstTime',
       ]);
 
-      let localWorkflows = workflows || {};
+      this.isFirstTime = Boolean(isFirstTime);
+      this.workflows = convertWorkflowsToObject(workflows || {});
 
       if (isFirstTime) {
-        localWorkflows = firstWorkflows.map((workflow) =>
-          defaultWorkflow(workflow)
-        );
-        await browser.storage.local.set({
-          isFirstTime: false,
-          workflows: localWorkflows,
-        });
+        await browser.storage.local.set({ isFirstTime: false });
       }
-
-      this.isFirstTime = isFirstTime;
-      this.workflows = convertWorkflowsToObject(localWorkflows);
 
       this.retrieved = true;
     },

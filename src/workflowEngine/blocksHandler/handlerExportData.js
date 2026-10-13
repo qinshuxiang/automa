@@ -13,9 +13,7 @@ async function exportData({ data, id }, { refData }) {
   const dataToExport = data.dataToExport || 'data-columns';
   let payload = refData.table;
 
-  if (dataToExport === 'google-sheets') {
-    payload = refData.googleSheets[data.refKey] || [];
-  } else if (dataToExport === 'variable') {
+  if (dataToExport === 'variable') {
     payload = refData.variables[data.variableName] || [];
 
     if (!Array.isArray(payload)) {
@@ -39,7 +37,7 @@ async function exportData({ data, id }, { refData }) {
   });
 
   if (!this.engine.isPopup && !hasDownloadAccess) {
-    throw new Error("Don't have download permission");
+    throw new Error('缺少下载权限');
   } else if (!this.engine.isPopup && !this.engine.isMV2) {
     blobUrl = await blobToBase64(blobUrl);
   }

@@ -3,7 +3,6 @@ import { getBlocks } from '../getSharedData';
 const blocks = getBlocks();
 const autocompleteKeys = {
   loopId: 'loopData',
-  refKey: 'googleSheets',
   variableName: 'variables',
 };
 

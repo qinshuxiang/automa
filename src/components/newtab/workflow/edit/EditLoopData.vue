@@ -24,15 +24,7 @@
       </option>
     </ui-select>
     <ui-input
-      v-if="data.loopThrough === 'google-sheets'"
-      :model-value="data.referenceKey"
-      :label="t('workflow.blocks.loop-data.refKey')"
-      placeholder="abc123"
-      class="mt-2 w-full"
-      @change="updateData({ referenceKey: $event })"
-    />
-    <ui-input
-      v-else-if="data.loopThrough === 'variable'"
+      v-if="data.loopThrough === 'variable'"
       :model-value="data.variableName"
       :label="t('workflow.variables.name')"
       placeholder="abc123"
@@ -45,7 +37,7 @@
           :model-value="data.elementSelector"
           :label="t('workflow.blocks.base.selector')"
           autocomplete="off"
-          placeholder="CSS Selector or XPath"
+          placeholder="CSS 选择器或 XPath 表达式"
           class="mr-2 flex-1"
           @change="updateData({ elementSelector: $event })"
         />
@@ -138,7 +130,7 @@
     </template>
     <ui-modal
       v-model="state.showDataModal"
-      title="Data"
+      title="数据"
       content-class="max-w-3xl"
     >
       <div class="mb-4 flex items-center">
@@ -208,7 +200,6 @@ const maxFileSize = 1024 * 1024;
 const loopTypes = [
   'data-columns',
   'numbers',
-  'google-sheets',
   'variable',
   'custom-data',
   'elements',
@@ -247,44 +238,45 @@ function updateLoopID(id) {
 
   updateData({ loopId });
 }
-function importFile() {
-  openFilePicker(['application/json', 'text/csv', 'application/vnd.ms-excel'])
-    .then(async ([fileObj]) => {
-      if (fileObj.size > maxFileSize) {
-        toast.error(t('message.maxSizeExceeded'));
-        return;
-      }
+async function importFile() {
+  try {
+    const [fileObj] = await openFilePicker([
+      'application/json',
+      'text/csv',
+      'application/vnd.ms-excel',
+    ]);
 
+    if (!fileObj) return;
+
+    if (fileObj.size > maxFileSize) {
+      toast.error(t('message.maxSizeExceeded'));
+
+      return;
+    }
+
+    const content = await globalThis.__automaAsyncLifecycle.readBlob(
+      fileObj,
+      'text'
+    );
+
+    let loopData;
+
+    if (fileObj.type === 'application/json' || /\.json$/i.test(fileObj.name)) {
+      const result = JSON.parse(content);
+      loopData = Array.isArray(result) ? result : [result];
+    } else {
+      loopData = Papa.parse(content, options).data;
+    }
+
+    if (Array.isArray(loopData)) {
       file.name = fileObj.name;
       file.type = fileObj.type;
 
-      const csvTypes = ['text/csv', 'application/vnd.ms-excel'];
-
-      const reader = new FileReader();
-
-      reader.onload = ({ target }) => {
-        let loopData;
-
-        if (fileObj.type === 'application/json') {
-          const result = JSON.parse(target.result);
-          loopData = Array.isArray(result) ? result : [result];
-        } else if (csvTypes.includes(fileObj.type)) {
-          loopData = Papa.parse(target.result, options).data;
-        }
-
-        if (Array.isArray(loopData)) {
-          const loopDataStr = JSON.stringify(loopData, null, 2);
-
-          updateData({ loopData: loopDataStr });
-        }
-      };
-
-      reader.readAsText(fileObj);
-    })
-    .catch((error) => {
-      console.error(error);
-      if (error.message.startsWith('invalid')) toast.error(error.message);
-    });
+      updateData({ loopData: JSON.stringify(loopData, null, 2) });
+    }
+  } catch (error) {
+    toast.error(`导入失败：${error.message}`);
+  }
 }
 
 onMounted(() => {

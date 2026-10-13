@@ -1,78 +1,89 @@
-import { read as readXlsx, utils as utilsXlsx } from 'xlsx';
-import Papa from 'papaparse';
 import { parseJSON } from '@/utils/helper';
-import getFile, { readFileAsBase64 } from '@/utils/getFile';
+import {
+  InsertDataError,
+  normalizeInsertItem,
+  readInsertFile,
+  parseInsertData,
+  INSERT_DATA_PHASE,
+} from '@/utils/insertData';
 import renderString from '../templating/renderString';
 
 async function insertData({ id, data }, { refData }) {
   const replacedValueList = {};
 
-  for (const item of data.dataList) {
+  for (const [itemIndex, rawItem] of data.dataList.entries()) {
+    // 目标类型先校验再归一化：非法显式类型直接报错，不再静默按 table 写入
+    if (
+      rawItem.type != null &&
+      rawItem.type !== 'table' &&
+      rawItem.type !== 'variable'
+    ) {
+      throw new InsertDataError('导入目标类型无效', {
+        code: 'INVALID_TARGET_TYPE',
+        itemIndex,
+        phase: INSERT_DATA_PHASE.WRITE,
+      });
+    }
+
+    const { item, warnings: normalizedWarnings } = normalizeInsertItem(rawItem);
     let value = '';
 
     if (item.isFile) {
-      const replacedPath = await renderString(
+      const renderedPath = await renderString(
         item.filePath || '',
         refData,
         this.engine.isPopup
       );
-      const path = replacedPath.value;
-      const isExcel = /.xlsx?$/.test(path);
-      const isJSON = path.endsWith('.json');
+      const filePath =
+        typeof renderedPath === 'string' ? renderedPath : renderedPath.value;
+      Object.assign(
+        replacedValueList,
+        typeof renderedPath === 'string' ? {} : renderedPath.list || {}
+      );
 
-      const action = item.action || item.csvAction || 'default';
-      let responseType = 'text';
-
-      if (isJSON) responseType = 'json';
-      else if (action === 'base64' || (isExcel && action !== 'default'))
-        responseType = 'blob';
-
-      let result = await getFile(path, {
-        responseType,
-        returnValue: true,
-      });
-
-      const readAsJson = action.includes('json');
-
-      if (action === 'base64') {
-        result = await readFileAsBase64(result);
-      } else if (result && path.endsWith('.csv') && readAsJson) {
-        const parsedCSV = Papa.parse(result, {
-          header: action.includes('header'),
+      if (!filePath || !filePath.trim()) {
+        throw new InsertDataError('文件路径为空', {
+          code: 'EMPTY_PATH',
+          itemIndex,
+          phase: INSERT_DATA_PHASE.LOAD,
         });
-        result = parsedCSV.data || [];
-      } else if (isExcel && readAsJson) {
-        const base64Xls = await readFileAsBase64(result);
-        const wb = readXlsx(base64Xls.slice(base64Xls.indexOf(',')), {
-          type: 'base64',
-        });
-
-        const inputtedSheet = (item.xlsSheet || '').trim();
-        const sheetName = wb.SheetNames.includes(inputtedSheet)
-          ? inputtedSheet
-          : wb.SheetNames[0];
-
-        const options = {};
-        if (item.xlsRange) options.range = item.xlsRange;
-        if (!action.includes('header')) options.header = 1;
-
-        const sheetData = utilsXlsx.sheet_to_json(
-          wb.Sheets[sheetName],
-          options
-        );
-        result = sheetData;
       }
 
-      value = result;
-      Object.assign(replacedValueList, replacedPath.list);
+      const normalizedItem = { ...item, filePath };
+      const readResult = await readInsertFile(filePath, normalizedItem, {
+        itemIndex,
+      });
+      const {
+        value: parsedValue,
+        metadata,
+        warnings,
+      } = await parseInsertData(readResult, normalizedItem, {
+        itemIndex,
+        purpose: 'execute',
+      });
+
+      [...normalizedWarnings, ...warnings].forEach((warning) => {
+        console.warn('[插入数据]', warning.code, warning.message, {
+          itemIndex,
+          sheet: metadata.sheet,
+          format: metadata.format,
+        });
+      });
+
+      value = parsedValue;
     } else {
-      const replacedValue = await renderString(
-        item.value,
+      const renderedValue = await renderString(
+        item.value ?? '',
         refData,
         this.engine.isPopup
       );
-      value = parseJSON(replacedValue.value, replacedValue.value);
-      Object.assign(replacedValueList, replacedValue.list);
+      const renderedText =
+        typeof renderedValue === 'string' ? renderedValue : renderedValue.value;
+      value = parseJSON(renderedText ?? '', renderedText ?? '');
+      Object.assign(
+        replacedValueList,
+        typeof renderedValue === 'string' ? {} : renderedValue.list || {}
+      );
     }
 
     if (item.type === 'table') {
@@ -81,12 +92,23 @@ async function insertData({ id, data }, { refData }) {
         this.addDataToColumn(item.name, tableValue);
       });
     } else {
-      const variableName = await renderString(
-        item.name,
+      const renderedName = await renderString(
+        item.name ?? '',
         refData,
         this.engine.isPopup
       );
-      await this.setVariable(variableName.value, value);
+      const variableName =
+        typeof renderedName === 'string' ? renderedName : renderedName.value;
+
+      if (!variableName || !variableName.trim()) {
+        throw new InsertDataError('变量名称为空', {
+          code: 'EMPTY_NAME',
+          itemIndex,
+          phase: INSERT_DATA_PHASE.WRITE,
+        });
+      }
+
+      await this.setVariable(variableName, value);
     }
   }
 

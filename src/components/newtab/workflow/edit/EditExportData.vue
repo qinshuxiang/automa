@@ -94,7 +94,7 @@
           </ui-checkbox>
           <ui-input
             :model-value="data.csvDelimiter"
-            label="Delimiter"
+            label="分隔符"
             class="mt-1"
             placeholder=","
             @change="updateData({ csvDelimiter: $event })"
@@ -118,7 +118,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:data']);
 
-const dataToExport = ['data-columns', 'google-sheets', 'variable'];
+const dataToExport = ['data-columns', 'variable'];
 const onConflict = ['uniquify', 'overwrite', 'prompt'];
 
 const { t } = useI18n();

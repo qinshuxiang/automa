@@ -501,7 +501,6 @@ const workflowModals = {
 const autocompleteList = computed(() => {
   const autocompleteData = {
     loopData: {},
-    googleSheets: {},
     table: {},
     ...funcsAutocomplete,
     globalData: autocompleteState.common.globalData,
@@ -512,8 +511,6 @@ const autocompleteList = computed(() => {
     if (item.loopData) Object.assign(autocompleteData.loopData, item.loopData);
     if (item.variables)
       Object.assign(autocompleteData.variables, item.variables);
-    if (item.googleSheets)
-      Object.assign(autocompleteData.googleSheets, item.googleSheets);
   });
 
   return autocompleteData;

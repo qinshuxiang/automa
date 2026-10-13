@@ -4,24 +4,24 @@ import { supportLocales } from '@/utils/shared';
 import dayjs from './dayjs';
 
 const i18n = createI18n({
+  locale: 'zh',
   legacy: false,
   fallbackLocale: 'en',
 });
 
-export function setI18nLanguage(locale) {
-  i18n.global.locale.value = locale;
+export function setI18nLanguage(locale = 'zh') {
+  const validLocale = supportLocales.some(({ id }) => id === locale)
+    ? locale
+    : 'zh';
 
-  document.querySelector('html').setAttribute('lang', locale);
+  i18n.global.locale.value = validLocale;
+
+  dayjs.locale(validLocale.toLowerCase());
+  document.documentElement.setAttribute('lang', validLocale);
 }
 
-export async function loadLocaleMessages(locale, location) {
-  const isLocaleSupported = supportLocales.some(({ id }) => id === locale);
-
-  if (!isLocaleSupported) {
-    console.error(`${locale} locale is not supported`);
-
-    return null;
-  }
+export async function loadLocaleMessages(locale = 'zh', location = 'newtab') {
+  if (!supportLocales.some(({ id }) => id === locale)) locale = 'zh';
 
   const importLocale = async (path, merge = false) => {
     try {
@@ -43,7 +43,7 @@ export async function loadLocaleMessages(locale, location) {
     await loadLocaleMessages('en', location);
   }
 
-  dayjs.locale(locale);
+  dayjs.locale(locale.toLowerCase());
 
   await importLocale('common.json');
   await importLocale('popup.json', true);
