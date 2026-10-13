@@ -4,10 +4,14 @@ import { sleep } from '@/utils/helper';
 import getFile, { readFileAsBase64 } from '@/utils/getFile';
 import automa from '@business';
 import { workflowState } from '@/workflowEngine';
+import { doBackup, doRestore } from '@/utils/backupRestore';
 import {
-  markRestoreGateReady,
-  checkRestoreJournal,
-} from '@/utils/backupRestore';
+  initBackup,
+  configureBackup,
+  rebuildAfterRestore,
+  hasSessionPassword,
+  clearSessionPassword,
+} from './backupService';
 import { registerWorkflowTrigger } from '../utils/workflowTrigger';
 import BackgroundUtils from './BackgroundUtils';
 import BackgroundWorkflowUtils from './BackgroundWorkflowUtils';
@@ -16,8 +20,8 @@ import BackgroundEventsListeners from './BackgroundEventsListeners';
 const isFirefox = BROWSER_TYPE === 'firefox';
 
 // 启动初始化：后台立即解除恢复门禁（不做恒定阻塞），再检查未完成的恢复日志
-markRestoreGateReady();
-checkRestoreJournal().catch(console.error);
+// 并续做定时备份初始化（含重启锁定）；详尽逻辑见 ./backupService
+initBackup().catch(console.error);
 
 browser.alarms.onAlarm.addListener(BackgroundEventsListeners.onAlarms);
 
@@ -206,6 +210,42 @@ message.on('workflow:resume', ({ id, nextBlock }) => {
 message.on('workflow:breakpoint', (id) => {
   if (!id) return;
   workflowState.update(id, { status: 'breakpoint' });
+});
+
+message.on('backup:status', async () => {
+  await initBackup();
+
+  const { localBackupSettings = {} } = await browser.storage.local.get(
+    'localBackupSettings'
+  );
+
+  return { ...localBackupSettings, unlocked: hasSessionPassword() };
+});
+message.on('backup:create', async ({ password = '' }) => {
+  await initBackup();
+
+  return doBackup(password);
+});
+message.on('backup:configure', configureBackup);
+message.on('backup:restore', async (restoreOptions) => {
+  await initBackup();
+
+  const result = await doRestore(restoreOptions, {
+    rebuild: rebuildAfterRestore,
+    assertIdle: async () => {
+      const hasRunningWorkflows =
+        workflowState.states.size > 0 ||
+        [...workflowState.states.values()].some(
+          (state) => state.pendingExecutions > 0
+        );
+      if (hasRunningWorkflows) {
+        throw new Error('请先停止全部正在运行的工作流，再恢复备份');
+      }
+    },
+  });
+  clearSessionPassword();
+
+  return result;
 });
 
 automa('background', message);

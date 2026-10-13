@@ -1,493 +1,191 @@
 <template>
-  <div class="max-w-xl">
-    <ui-card class="mb-12">
-      <h2 class="mb-2 font-semibold">
-        {{ t('settings.backupWorkflows.cloud.title') }}
-      </h2>
-      <template v-if="userStore.user">
-        <div
-          class="flex items-center rounded-lg border p-4 dark:border-gray-700"
-        >
-          <span class="bg-box-transparent inline-block rounded-full p-2">
-            <v-remixicon name="riUploadLine" />
-          </span>
-          <div class="ml-4 flex-1 leading-tight">
-            <p class="text-sm text-gray-600 dark:text-gray-200">
-              {{ t('settings.backupWorkflows.cloud.lastBackup') }}
-            </p>
-            <p>{{ formatDate(state.lastBackup) }}</p>
-          </div>
-          <ui-button
-            :loading="backupState.loading"
-            @click="backupState.modal = true"
-          >
-            {{ t('settings.backupWorkflows.backup.button') }}
-          </ui-button>
-        </div>
-        <div
-          class="mt-2 flex items-center rounded-lg border p-4 dark:border-gray-700"
-        >
-          <span class="bg-box-transparent inline-block rounded-full p-2">
-            <v-remixicon name="riDownloadLine" />
-          </span>
-          <p class="ml-4 flex-1">
-            {{ t('settings.backupWorkflows.cloud.sync') }}
-          </p>
-          <ui-button
-            :loading="state.loadingSync"
-            class="ml-2"
-            @click="syncBackupWorkflows"
-          >
-            {{ t('settings.backupWorkflows.cloud.sync') }}
-          </ui-button>
-        </div>
-      </template>
-      <div v-else class="py-4 text-center">
-        <p>
-          {{ t('settings.backupWorkflows.needSignin') }}
-        </p>
-        <ui-button
-          tag="a"
-          href="https://automa.site/auth"
-          target="_blank"
-          class="mt-4 inline-block w-44"
-        >
-          {{ t('auth.signIn') }}
+  <div class="space-y-6 pb-8">
+    <ui-card>
+      <h2 class="text-xl font-semibold">完整本地备份与恢复</h2>
+      <p class="mt-3">
+        备份包含工作流（含受保护工作流）、文件夹、组件包、设置、快捷键、表格结构及全部行数据、变量和凭据。运行日志与临时执行状态不包含在内。
+      </p>
+      <p class="mt-2">
+        含凭据或受保护工作流时，必须设置密码，整个备份文件都会加密。密码不会写入文件，请妥善保管。
+      </p>
+      <ui-input
+        v-model="password"
+        type="password"
+        label="备份／恢复密码"
+        autocomplete="new-password"
+        class="mt-4 w-full"
+        placeholder="无敏感数据时可留空；输入密码后整包加密"
+      />
+      <div class="mt-4 flex gap-3">
+        <ui-button variant="accent" :loading="loading" @click="createBackup">
+          下载完整备份
+        </ui-button>
+        <ui-button :loading="loading" @click="restoreBackup">
+          选择文件并恢复
         </ui-button>
       </div>
-      <p v-if="false">
-        Upgrade to the
-        <a
-          href="https://automa.site/pricing"
-          target="_blank"
-          class="text-yellow-500 underline dark:text-yellow-300"
-        >
-          pro plan
-        </a>
-        to start back up your workflows to the cloud
+      <ui-checkbox v-model="overwrite" class="mt-4">
+        覆盖现有同 ID 数据（默认保留现有数据）
+      </ui-checkbox>
+      <p class="mt-3 text-sm">
+        恢复前会检查密码、文件格式和关联关系，并保存恢复前快照。恢复失败时自动回滚；请先停止运行中的工作流。支持旧版导出，但旧文件未保存的表格行数据无法补回。
+      </p>
+      <p v-if="statusMessage" role="status" class="mt-4 whitespace-pre-wrap">
+        {{ statusMessage }}
       </p>
     </ui-card>
-    <h2 class="mb-2 font-semibold">
-      {{ t('settings.backupWorkflows.title') }}
-    </h2>
-    <div class="flex space-x-4">
-      <div class="w-6/12 rounded-lg border p-4 dark:border-gray-700">
-        <div class="text-center">
-          <span class="bg-box-transparent inline-block rounded-full p-4">
-            <v-remixicon name="riDownloadLine" size="36" />
-          </span>
-        </div>
-        <ui-checkbox v-model="state.encrypt" class="mt-12 mb-4">
-          {{ t('settings.backupWorkflows.backup.encrypt') }}
-        </ui-checkbox>
-        <div class="flex items-center gap-2">
-          <ui-popover @close="registerScheduleBackup">
-            <template #trigger>
-              <ui-button
-                v-tooltip="t('settings.backupWorkflows.backup.settings')"
-                icon
-                :class="{ 'text-primary': localBackupSchedule.schedule }"
-              >
-                <v-remixicon name="riSettings3Line" />
-              </ui-button>
-            </template>
-            <div class="w-64">
-              <p class="mb-2 font-semibold">
-                {{ t('settings.backupWorkflows.backup.settings') }}
-              </p>
-              <p>Also backup</p>
-              <div class="flex mt-1 flex-col gap-2">
-                <ui-checkbox
-                  v-for="item in BACKUP_ITEMS_INCLUDES"
-                  :key="item.id"
-                  :model-value="
-                    localBackupSchedule.includedItems.includes(item.id)
-                  "
-                  @change="
-                    $event
-                      ? localBackupSchedule.includedItems.push(item.id)
-                      : localBackupSchedule.includedItems.splice(
-                          localBackupSchedule.includedItems.indexOf(item.id),
-                          1
-                        )
-                  "
-                >
-                  {{ item.name }}
-                </ui-checkbox>
-              </div>
-              <p class="mt-4">
-                {{ t('settings.backupWorkflows.backup.schedule') }}
-              </p>
-              <template v-if="!downloadPermission.has.downloads">
-                <p class="text-gray-600 dark:text-gray-300 mt-1">
-                  Automa requires the "Downloads" permission for the schedule
-                  backup to work
-                </p>
-                <ui-button
-                  class="mt-2 w-full"
-                  @click="downloadPermission.request()"
-                >
-                  Allow "Downloads" permission
-                </ui-button>
-              </template>
-              <template v-else>
-                <ui-select
-                  v-model="localBackupSchedule.schedule"
-                  class="w-full mt-2"
-                >
-                  <option value="">Never</option>
-                  <option
-                    v-for="(value, key) in BACKUP_SCHEDULES"
-                    :key="key"
-                    :value="key"
-                  >
-                    {{ value }}
-                  </option>
-                  <option value="custom">Custom</option>
-                </ui-select>
-                <template v-if="localBackupSchedule.schedule === 'custom'">
-                  <ui-input
-                    v-model="localBackupSchedule.customSchedule"
-                    label="Cron Expression"
-                    class="w-full mt-2"
-                    placeholder="0 8 * * *"
-                  />
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {{ getBackupScheduleCron() }}
-                  </p>
-                </template>
-                <ui-input
-                  v-if="localBackupSchedule.schedule !== ''"
-                  v-model="localBackupSchedule.folderName"
-                  label="Folder name"
-                  class="w-full mt-2"
-                  placeholder="backup-folder"
-                />
-                <p
-                  v-if="localBackupSchedule.lastBackup"
-                  class="text-gray-600 dark:text-gray-300 text-sm mt-4"
-                >
-                  Last backup:
-                  {{ dayjs(localBackupSchedule.lastBackup).fromNow() }}
-                </p>
-              </template>
-            </div>
-          </ui-popover>
-          <ui-button class="flex-1" @click="backupWorkflows">
-            {{ t('settings.backupWorkflows.backup.button') }}
-          </ui-button>
-        </div>
-      </div>
-      <div class="w-6/12 rounded-lg border p-4 dark:border-gray-700">
-        <div class="text-center">
-          <span class="bg-box-transparent inline-block rounded-full p-4">
-            <v-remixicon name="riUploadLine" size="36" />
-          </span>
-        </div>
-        <ui-checkbox v-model="state.updateIfExists" class="mt-6 mb-4">
-          {{ t('settings.backupWorkflows.restore.update') }}
-        </ui-checkbox>
-        <ui-button class="w-full" @click="restoreWorkflows">
-          {{ t('settings.backupWorkflows.restore.button') }}
-        </ui-button>
-      </div>
-    </div>
+    <ui-card>
+      <h2 class="text-xl font-semibold">定时完整备份</h2>
+      <p class="mt-2">
+        默认关闭。加密密码只保留在当前浏览器会话，重启后需要重新输入密码并启用。
+      </p>
+      <ui-select v-model="settings.schedule" class="mt-4 w-full">
+        <option value="">关闭</option>
+        <option value="0 8 * * *">每天 08:00</option>
+        <option value="0 8 * * 0">每周日 08:00</option>
+        <option value="custom">自定义 Cron</option>
+      </ui-select>
+      <ui-input
+        v-if="settings.schedule === 'custom'"
+        v-model="settings.customSchedule"
+        label="Cron 表达式"
+        class="mt-3 w-full"
+      />
+      <ui-input
+        v-model="settings.folderName"
+        label="下载目录内的备份文件夹"
+        class="mt-3 w-full"
+      />
+      <ui-checkbox v-model="settings.encrypt" class="mt-3">
+        加密定时备份（使用上方输入的会话密码）
+      </ui-checkbox>
+      <p v-if="settings.requiresUnlock" class="mt-3 text-red-500">
+        {{ settings.lastError || '定时备份已锁定，请重新输入密码并启用。' }}
+      </p>
+      <p v-if="settings.lastBackup" class="mt-3">
+        最近备份：{{
+          dayjs(settings.lastBackup).format('YYYY年MM月DD日 HH:mm')
+        }}
+      </p>
+      <ui-button class="mt-4" :loading="loading" @click="configureBackup">
+        保存定时备份设置
+      </ui-button>
+    </ui-card>
   </div>
-  <ui-modal
-    v-model="backupState.modal"
-    :title="t('settings.backupWorkflows.cloud.title')"
-    content-class="max-w-5xl"
-  >
-    <settings-cloud-backup
-      v-model:ids="backupState.ids"
-      @close="backupState.modal = false"
-    />
-  </ui-modal>
 </template>
 <script setup>
-import { reactive, toRaw, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useToast } from 'vue-toastification';
+import { reactive, ref, onMounted } from 'vue';
 import dayjs from 'dayjs';
-import AES from 'crypto-js/aes';
-import cronParser from 'cron-parser';
-import dbStorage from '@/db/storage';
-import encUtf8 from 'crypto-js/enc-utf8';
 import browser from 'webextension-polyfill';
-import hmacSHA256 from 'crypto-js/hmac-sha256';
-import { useDialog } from '@/composable/dialog';
-import { readableCron } from '@/lib/cronstrue';
-import { useUserStore } from '@/stores/user';
-import { getUserWorkflows } from '@/utils/api';
-import { useWorkflowStore } from '@/stores/workflow';
-import { useHasPermissions } from '@/composable/hasPermissions';
-import { fileSaver, openFilePicker, parseJSON } from '@/utils/helper';
-import SettingsCloudBackup from '@/components/newtab/settings/SettingsCloudBackup.vue';
+import { sendMessage } from '@/utils/message';
+import { openFilePicker } from '@/utils/helper';
 
-const BACKUP_SCHEDULES = {
-  '0 8 * * *': 'Every day',
-  '0 8 * * 0': 'Every week',
-};
-const BACKUP_ITEMS_INCLUDES = [
-  { id: 'storage:table', name: 'Storage tables' },
-  { id: 'storage:variables', name: 'Storage variables' },
-];
-
-const { t } = useI18n();
-const toast = useToast();
-const dialog = useDialog();
-const userStore = useUserStore();
-const workflowStore = useWorkflowStore();
-const downloadPermission = useHasPermissions(['downloads']);
-
-const state = reactive({
-  lastSync: null,
-  encrypt: false,
-  lastBackup: null,
-  loadingSync: false,
-  updateIfExists: false,
-});
-const backupState = reactive({
-  ids: [],
-  modal: false,
-  loading: false,
-});
-const localBackupSchedule = reactive({
+// 完整本地备份与恢复（成品包 SettingsBackup 页面组件移植）
+const password = ref('');
+const overwrite = ref(false);
+const loading = ref(false);
+const statusMessage = ref('');
+const settings = reactive({
   schedule: '',
-  lastBackup: null,
-  includedItems: [],
   customSchedule: '',
   folderName: 'automa-backup',
+  encrypt: false,
 });
 
-async function registerScheduleBackup() {
+async function run(task) {
+  if (loading.value) return;
+
+  loading.value = true;
+  statusMessage.value = '';
+
   try {
-    if (!localBackupSchedule.schedule.trim()) {
-      await browser.alarms.clear('schedule-local-backup');
-    } else {
-      const expression =
-        localBackupSchedule.schedule === 'custom'
-          ? localBackupSchedule.customSchedule
-          : localBackupSchedule.schedule;
-      const parsedExpression = cronParser.parseExpression(expression).next();
-      if (!parsedExpression) return;
-
-      await browser.alarms.create('schedule-local-backup', {
-        when: parsedExpression.getTime(),
-      });
-    }
-
-    browser.storage.local.set({
-      localBackupSettings: toRaw(localBackupSchedule),
-    });
+    await task();
   } catch (error) {
-    console.error(error);
+    statusMessage.value = `操作失败：${error.message}`;
+  } finally {
+    loading.value = false;
   }
 }
-function getBackupScheduleCron() {
-  try {
-    const expression = localBackupSchedule.customSchedule;
 
-    return `${readableCron(expression)}`;
-  } catch (error) {
-    return error.message;
-  }
+function createBackup() {
+  run(async () => {
+    const backup = await sendMessage(
+      'backup:create',
+      { password: password.value },
+      'background'
+    );
+
+    const blobUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(backup)], { type: 'application/json' })
+    );
+    const anchor = document.createElement('a');
+    anchor.download = `automa-backup-${dayjs().format(
+      'YYYY-MM-DD-HH-mm'
+    )}.json`;
+    anchor.href = blobUrl;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+    statusMessage.value = '完整备份已生成。请保留文件和备份密码。';
+  });
 }
-function formatDate(date) {
-  if (!date) return 'null';
 
-  return dayjs(date).format('DD MMMM YYYY, hh:mm A');
-}
-async function syncBackupWorkflows() {
-  try {
-    state.loadingSync = true;
-    const { backup, hosted } = await getUserWorkflows(false);
-    const backupIds = backup.map(({ id }) => id);
-
-    userStore.backupIds = backupIds;
-    userStore.hostedWorkflows = hosted;
-
-    await browser.storage.local.set({
-      backupIds,
-      lastBackup: new Date().toISOString(),
-    });
-
-    await workflowStore.insertOrUpdate(backup, { checkUpdateDate: true });
-
-    state.loadingSync = false;
-  } catch (error) {
-    console.error(error);
-    toast.error(t('message.somethingWrong'));
-    state.loadingSync = false;
-  }
-}
-async function backupWorkflows() {
-  try {
-    const workflows = workflowStore.getWorkflows.reduce((acc, workflow) => {
-      if (workflow.isProtected) return acc;
-
-      delete workflow.$id;
-      delete workflow.createdAt;
-      delete workflow.data;
-      delete workflow.isDisabled;
-      delete workflow.isProtected;
-
-      acc.push(workflow);
-
-      return acc;
-    }, []);
-
-    const payload = {
-      isProtected: state.encrypt,
-      workflows: JSON.stringify(workflows),
-    };
-
-    if (localBackupSchedule.includedItems.includes('storage:table')) {
-      const tables = await dbStorage.tablesItems.toArray();
-      payload.storageTables = JSON.stringify(tables);
-    }
-    if (localBackupSchedule.includedItems.includes('storage:variables')) {
-      const variables = await dbStorage.variables.toArray();
-      payload.storageVariables = JSON.stringify(variables);
-    }
-
-    const downloadFile = (data) => {
-      const fileName = `automa-${dayjs().format('DD-MM-YYYY')}.json`;
-      const blob = new Blob([JSON.stringify(data)], {
-        type: 'application/json',
-      });
-      const objectUrl = URL.createObjectURL(blob);
-
-      fileSaver(fileName, objectUrl);
-
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    if (state.encrypt) {
-      dialog.prompt({
-        placeholder: t('common.password'),
-        title: t('settings.backupWorkflows.title'),
-        okText: t('settings.backupWorkflows.backup.button'),
-        inputType: 'password',
-        onConfirm: (password) => {
-          const encryptedWorkflows = AES.encrypt(
-            payload.workflows,
-            password
-          ).toString();
-          const hmac = hmacSHA256(encryptedWorkflows, password).toString();
-
-          payload.workflows = hmac + encryptedWorkflows;
-
-          downloadFile(payload);
-        },
-      });
-    } else {
-      downloadFile(payload);
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-async function restoreWorkflows() {
-  try {
+function restoreBackup() {
+  run(async () => {
     const [file] = await openFilePicker('application/json');
-    const reader = new FileReader();
-    const insertWorkflows = (workflows) => {
-      const newWorkflows = workflows.map((workflow) => {
-        if (!state.updateIfExists) {
-          workflow.createdAt = Date.now();
-          delete workflow.id;
-        }
+    if (!file) return;
 
-        return workflow;
+    const payload = JSON.parse(await file.text());
+    const result = await sendMessage(
+      'backup:restore',
+      {
+        payload,
+        password: password.value,
+        overwrite: overwrite.value,
+      },
+      'background'
+    );
+
+    password.value = '';
+    statusMessage.value = `${result.message} 页面将在 3 秒后重新加载。`;
+    setTimeout(() => window.location.reload(), 3000);
+  });
+}
+
+function configureBackup() {
+  run(async () => {
+    if (settings.schedule) {
+      const granted = await browser.permissions.request({
+        permissions: ['downloads'],
       });
-      const showMessage = (event) => {
-        toast(
-          t('settings.backupWorkflows.workflowsAdded', {
-            count: Object.values(event).length,
-          })
-        );
-      };
+      if (!granted) throw new Error('未获得下载权限，无法启用定时备份');
+    }
 
-      if (state.updateIfExists) {
-        return workflowStore
-          .insertOrUpdate(newWorkflows, { duplicateId: true })
-          .then(showMessage);
-      }
-
-      return workflowStore.insert(newWorkflows).then(showMessage);
-    };
-
-    reader.onload = ({ target }) => {
-      let payload = parseJSON(target.result, null);
-      if (!payload)
-        payload = parseJSON(window.decodeURIComponent(target.result), null);
-
-      if (!payload) return;
-
-      const storageTables = parseJSON(payload.storageTables, null);
-      if (Array.isArray(storageTables)) {
-        dbStorage.tablesItems.bulkPut(storageTables);
-      }
-
-      const storageVariables = parseJSON(payload.storageVariables, null);
-      if (Array.isArray(storageVariables)) {
-        dbStorage.variables.bulkPut(storageVariables);
-      }
-
-      if (payload.isProtected) {
-        dialog.prompt({
-          placeholder: t('common.password'),
-          title: t('settings.backupWorkflows.restore.title'),
-          okText: t('settings.backupWorkflows.restore.button'),
-          inputType: 'password',
-          onConfirm: (password) => {
-            const hmac = payload.workflows.substring(0, 64);
-            const encryptedWorkflows = payload.workflows.substring(64);
-            const decryptedHmac = hmacSHA256(
-              encryptedWorkflows,
-              password
-            ).toString();
-
-            if (hmac !== decryptedHmac) {
-              toast.error(t('settings.backupWorkflows.invalidPassword'));
-
-              return;
-            }
-
-            const decryptedWorkflows = AES.decrypt(
-              encryptedWorkflows,
-              password
-            ).toString(encUtf8);
-            payload.workflows = parseJSON(decryptedWorkflows, []);
-
-            insertWorkflows(payload.workflows);
-          },
-        });
-      } else {
-        payload.workflows = parseJSON(payload.workflows, []);
-        insertWorkflows(payload.workflows);
-      }
-    };
-
-    reader.readAsText(file);
-  } catch (error) {
-    console.error(error);
-    toast.error(error.message);
-  }
+    Object.assign(
+      settings,
+      await sendMessage(
+        'backup:configure',
+        { settings: { ...settings }, password: password.value },
+        'background'
+      )
+    );
+    password.value = '';
+    statusMessage.value = settings.schedule
+      ? '定时备份已启用。加密密码只保留在本次会话。'
+      : '定时备份已关闭。';
+  });
 }
 
 onMounted(async () => {
-  const { lastBackup, lastSync, localBackupSettings } =
-    await browser.storage.local.get([
-      'lastSync',
-      'lastBackup',
-      'localBackupSettings',
-    ]);
-
-  Object.assign(localBackupSchedule, localBackupSettings || {});
-
-  state.lastSync = lastSync;
-  state.lastBackup = lastBackup;
+  try {
+    Object.assign(
+      settings,
+      await sendMessage('backup:status', {}, 'background')
+    );
+  } catch (error) {
+    statusMessage.value = error.message;
+  }
 });
 </script>

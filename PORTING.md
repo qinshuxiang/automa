@@ -66,6 +66,17 @@
   - 备份/恢复完整子系统（包模块 85245 全量 + 25539 格式校验）与 SettingsBackup UI 单独排期；backupRestore.js/workflowValidation.js 已产出未接线
 - [x] 验证：probes.cjs 25 项 0 confirmed（无缺陷复现）；regressions.test.cjs 42/42 通过；CJK 差集收敛至 944 项（注释残留 + 备份子系统 + locale 分包差异三类已知项）
 
+## 阶段 4：备份/恢复完整子系统 ✅
+
+- [x] `src/utils/backupFormat.js`（新建）：包模块 25539 全量移植——备份格式常量（`automa-local-backup` v1、storage 键表、IndexedDB 表清单）、默认状态、原型链污染/引用完整性校验、AES-GCM+PBKDF2-SHA256（310000 迭代）加密备份/解密、按 ID 状态合并（恢复后定时备份强制关闭并要求重新解锁）、快照回滚恢复
+- [x] `src/utils/backupRestore.js`（重写）：包模块 85245 全量移植——门禁（isRestoreBlocked/markRestoreGateReady/checkRestoreJournal 原有导出不变）+ 完整 payload：状态收集（storage+IndexedDB+localStorage 快捷键）、doBackup（凭据解密为明文、受保护工作流附加恢复材料）、writeBackupState（整库 clear+bulkPut、storage 增删、快捷键写回）、restoreFromJournal、doRestore（新版格式 + 旧版 v1.28.27 导出兼容、恢复材料重加密、references 校验、assertIdle）
+- [x] `src/background/backupService.js`（新建）：initBackup（门禁就绪 + 续恢复 + 重启锁定加密定时备份）、configureBackup（文件夹相对路径校验、downloads 权限、试备份、会话密码）、定时闹钟（schedule-local-backup，cron-parser）、rebuildAfterRestore（清工作流闹钟/上下文菜单、触发器重建、快捷键合并）
+- [x] `src/background/index.js`：backup:status / backup:create / backup:configure / backup:restore 四消息；assertIdle 校验 workflowState 运行态；恢复后清空会话密码
+- [x] `src/background/BackgroundEventsListeners.js`：onAlarms 定时备份分支重写（失败锁定 + lastError）、onRuntimeStartup/onInstalled(update) 接入 initBackup、install 默认值对齐包（settings.locale zh、localBackupSettings、只补缺失键）
+- [x] `src/newtab/pages/settings/SettingsBackup.vue`：整页重写为包版「完整本地备份与恢复」（密码输入 + 下载/恢复 + 覆盖开关 + 定时备份卡片，恢复后 3 秒刷新）
+- [x] workflows 首页菜单新增「本地备份与恢复」入口（对齐包 /backup 路由项）
+- [x] 验证：构建 0 错误、eslint 0 错误、regressions 42/42、probes 0 confirmed、CJK 缺失 944 → 855（备份子系统运行时串全部收敛，余项为注释残留 + locale 分包差异两类已知项）
+
 ## 验证与交付
 
 - [ ] 源码构建产物与成品包逐文件行为抽查（加载测试由用户在 UOS 真机执行）

@@ -185,6 +185,14 @@
                 </ui-list-item>
                 <ui-list-item
                   v-close-popover
+                  tag="router-link"
+                  to="/backup"
+                  class="cursor-pointer"
+                >
+                  本地备份与恢复
+                </ui-list-item>
+                <ui-list-item
+                  v-close-popover
                   class="cursor-pointer"
                   @click="addHostedWorkflow"
                 >

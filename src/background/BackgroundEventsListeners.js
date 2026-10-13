@@ -1,79 +1,12 @@
 import browser from 'webextension-polyfill';
 import { initElementSelector } from '@/newtab/utils/elementSelector';
-import dayjs from 'dayjs';
-import dbStorage from '@/db/storage';
-import cronParser from 'cron-parser';
+import {
+  initBackup,
+  isScheduledBackupAlarm,
+  handleScheduledBackup,
+} from './backupService';
 import BackgroundUtils from './BackgroundUtils';
 import BackgroundWorkflowTriggers from './BackgroundWorkflowTriggers';
-
-async function handleScheduleBackup() {
-  try {
-    const { localBackupSettings, workflows } = await browser.storage.local.get([
-      'localBackupSettings',
-      'workflows',
-    ]);
-    if (!localBackupSettings) return;
-
-    const workflowsData = Object.values(workflows || []).reduce(
-      (acc, workflow) => {
-        if (workflow.isProtected) return acc;
-
-        delete workflow.$id;
-        delete workflow.createdAt;
-        delete workflow.data;
-        delete workflow.isDisabled;
-        delete workflow.isProtected;
-
-        acc.push(workflow);
-
-        return acc;
-      },
-      []
-    );
-
-    const payload = {
-      workflows: JSON.stringify(workflowsData),
-    };
-
-    if (localBackupSettings.includedItems.includes('storage:table')) {
-      const tables = await dbStorage.tablesItems.toArray();
-      payload.storageTables = JSON.stringify(tables);
-    }
-    if (localBackupSettings.includedItems.includes('storage:variables')) {
-      const variables = await dbStorage.variables.toArray();
-      payload.storageVariables = JSON.stringify(variables);
-    }
-
-    const base64 = btoa(encodeURIComponent(JSON.stringify(payload)));
-    const filename = `${
-      localBackupSettings.folderName ? `${localBackupSettings.folderName}/` : ''
-    }${dayjs().format('DD-MMM-YYYY--HH-mm')}.json`;
-
-    await browser.downloads.download({
-      filename,
-      url: `data:application/json;base64,${base64}`,
-    });
-    await browser.storage.local.set({
-      localBackupSettings: {
-        ...localBackupSettings,
-        lastBackup: Date.now(),
-      },
-    });
-
-    const expression =
-      localBackupSettings.schedule === 'custom'
-        ? localBackupSettings.customSchedule
-        : localBackupSettings.schedule;
-    const parsedExpression = cronParser.parseExpression(expression).next();
-    if (!parsedExpression) return;
-
-    await browser.alarms.create('schedule-local-backup', {
-      when: parsedExpression.getTime(),
-    });
-  } catch (error) {
-    console.error(error);
-  }
-}
 
 class BackgroundEventsListeners {
   static onActionClicked() {
@@ -89,8 +22,8 @@ class BackgroundEventsListeners {
   }
 
   static onAlarms(event) {
-    if (event.name === 'schedule-local-backup') {
-      handleScheduleBackup();
+    if (isScheduledBackupAlarm(event.name)) {
+      handleScheduledBackup();
       return;
     }
 
@@ -120,7 +53,13 @@ class BackgroundEventsListeners {
     }
   }
 
-  static onRuntimeStartup() {
+  static async onRuntimeStartup() {
+    try {
+      await initBackup();
+    } catch (error) {
+      console.error(error);
+    }
+
     browser.storage.local.remove('workflowStates');
     (browser.action || browser.browserAction).setBadgeText({ text: '' });
     BackgroundWorkflowTriggers.reRegisterTriggers(true);
@@ -135,15 +74,30 @@ class BackgroundEventsListeners {
   static async onRuntimeInstalled({ reason }) {
     try {
       if (reason === 'install') {
-        await browser.storage.local.set({
+        const defaults = {
           logs: [],
           shortcuts: {},
-          workflows: [],
+          workflows: {},
+          settings: { locale: 'zh' },
           collections: [],
           workflowState: {},
           isFirstTime: true,
           visitWebTriggers: [],
-        });
+          localBackupSettings: {
+            schedule: '',
+            encrypt: false,
+            folderName: 'automa-backup',
+          },
+        };
+        const existing = await browser.storage.local.get(Object.keys(defaults));
+        // 只补齐缺失的键，不覆盖已有数据（对齐成品包 onInstalled install 分支）
+        await browser.storage.local.set(
+          Object.fromEntries(
+            Object.entries(defaults).filter(
+              ([key]) => existing[key] === undefined
+            )
+          )
+        );
         await browser.windows.create({
           type: 'popup',
           state: 'maximized',
@@ -154,6 +108,7 @@ class BackgroundEventsListeners {
       }
 
       if (reason === 'update') {
+        await initBackup().catch(console.error);
         await BackgroundWorkflowTriggers.reRegisterTriggers();
       }
     } catch (error) {
