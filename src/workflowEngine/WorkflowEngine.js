@@ -587,7 +587,14 @@ class WorkflowEngine {
           },
         };
 
-        browser.storage.local.set(workflowState);
+        browser.storage.local
+          .set(workflowState)
+          .catch((error) =>
+            console.error(
+              '保存 reuseLastState 状态失败（下次执行将使用新状态）:',
+              error
+            )
+          );
       } else if (status === 'success') {
         clearCache(this.workflow);
       }
@@ -666,6 +673,10 @@ class WorkflowEngine {
                 .modify({ items: mergedItems, columnsIndex: mergedColumns });
             }
           );
+        } catch (commitError) {
+          // 表格提交失败（如存储配额耗尽、数据库连接关闭）不能阻断执行生命周期：
+          // 子流程的父流程通过 destroyed 事件接收结束通知，丢失会导致父流程永久等待
+          console.error('提交表格数据失败（不影响执行结束通知）:', commitError);
         } finally {
           release();
         }

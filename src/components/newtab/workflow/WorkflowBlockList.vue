@@ -23,7 +23,7 @@
           class="invisible absolute right-2 top-2 flex items-center text-gray-600 group-hover:visible dark:text-gray-300"
         >
           <a
-            :href="`https://docs.automa.site/blocks/${block.id}.html`"
+            :href="`docs/使用手册.html#sec5`"
             :title="t('common.docs')"
             target="_blank"
             rel="noopener"

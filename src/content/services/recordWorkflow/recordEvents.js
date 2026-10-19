@@ -7,8 +7,11 @@ import addBlockToFlow from './addBlock';
 
 let isMainFrame = true;
 
+const eventTarget = (event) =>
+  event.composedPath?.().find((node) => node.nodeType === 1) || event.target;
 const isAutomaInstance = (target) =>
   target.id === 'automa-recording' ||
+  target.getRootNode?.().host?.id === 'automa-recording' ||
   document.body.hasAttribute('automa-selecting');
 const isTextFieldEl = (el) => ['INPUT', 'TEXTAREA'].includes(el.tagName);
 
@@ -39,7 +42,8 @@ async function addBlock(detail) {
   }
 }
 
-function onChange({ target }) {
+function onChange(event) {
+  const target = eventTarget(event);
   if (isAutomaInstance(target)) return;
 
   const isInputEl = target.tagName === 'INPUT';
@@ -112,14 +116,15 @@ function onChange({ target }) {
   });
 }
 async function onKeydown(event) {
-  if (isAutomaInstance(event.target) || event.repeat) return;
+  const target = eventTarget(event);
+  if (isAutomaInstance(target) || event.repeat) return;
 
-  const isTextField = isTextFieldEl(event.target);
+  const isTextField = isTextFieldEl(target);
   const enterKey = event.key === 'Enter';
   let isSubmitting = false;
 
   if (isTextField) {
-    const inputInForm = event.target.form && event.target.tagName === 'INPUT';
+    const inputInForm = target.form && target.tagName === 'INPUT';
     if (enterKey && inputInForm) {
       event.preventDefault();
 
@@ -130,8 +135,8 @@ async function onKeydown(event) {
           clearValue: true,
           type: 'text-field',
           waitForSelector: true,
-          value: event.target.value,
-          selector: findSelector(event.target),
+          value: target.value,
+          selector: findSelector(target),
         },
       });
 
@@ -142,7 +147,7 @@ async function onKeydown(event) {
   }
 
   recordPressedKey(event, (keysArr) => {
-    const selector = isTextField && enterKey ? findSelector(event.target) : '';
+    const selector = isTextField && enterKey ? findSelector(target) : '';
     const keys = keysArr.join('+');
 
     addBlock((recording) => {
@@ -165,7 +170,7 @@ async function onKeydown(event) {
 
       if (isSubmitting) {
         setTimeout(() => {
-          event.target.form.submit();
+          target.form.submit();
         }, 500);
       }
 
@@ -174,7 +179,7 @@ async function onKeydown(event) {
   });
 }
 function onClick(event) {
-  const { target } = event;
+  const target = eventTarget(event);
   if (isAutomaInstance(target)) return;
 
   const isTextField =
@@ -252,7 +257,9 @@ const onMessage = debounce(({ data, source }) => {
     lastIndex
   ].data.selector = `${frameSelector} |> ${lastFlow.data.selector}`;
 
-  browser.storage.local.set({ recording: data.recording });
+  browser.storage.local
+    .set({ recording: data.recording })
+    .catch((error) => console.error('保存录制数据失败:', error));
 }, 100);
 const onScroll = debounce(({ target }) => {
   if (isAutomaInstance(target)) return;
@@ -285,7 +292,7 @@ const onScroll = debounce(({ target }) => {
   });
 }, 500);
 
-const onInputTextField = debounce(({ target }) => {
+const recordInput = debounce(({ target }) => {
   const selector = target.dataset.automaElSelector;
   if (!selector) return;
 
@@ -316,13 +323,18 @@ const onInputTextField = debounce(({ target }) => {
   });
 }, 300);
 
-function onFocusIn({ target }) {
+function onInputTextField(event) {
+  recordInput({ target: eventTarget(event) });
+}
+function onFocusIn(event) {
+  const target = eventTarget(event);
   if (!isTextFieldEl(target)) return;
 
   target.setAttribute('data-automa-el-selector', findSelector(target));
   target.addEventListener('input', onInputTextField);
 }
-function onFocusOut({ target }) {
+function onFocusOut(event) {
+  const target = eventTarget(event);
   if (!isTextFieldEl(target)) return;
 
   target.removeEventListener('input', onInputTextField);

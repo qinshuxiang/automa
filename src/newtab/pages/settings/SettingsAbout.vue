@@ -65,7 +65,7 @@ const links = [
   {
     name: 'Documentation',
     icon: 'riBook3Line',
-    url: 'https://docs.automa.site',
+    url: 'docs/使用手册.html#top',
   },
   {
     name: 'Blog',

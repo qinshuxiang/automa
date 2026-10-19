@@ -16,7 +16,8 @@
     "dev": "node utils/webserver.js",
     "dev:firefox": "cross-env BROWSER=firefox yarn dev",
     "prettier": "prettier --write '**/*.{js,jsx,css,html}'",
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore ."
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore .",
+    "test": "node --test tests/*.test.cjs"
   },
   "engines": {
     "node": ">=14.18.1"

@@ -90,12 +90,12 @@ const logsData = {
 const dataStr = computed(() => {
   if (state.status !== 'idle') return '';
 
-  return logsData[state.activeTab] ? logsData[state.activeTab] : '';
+  return JSON.stringify(logsData[state.activeTab] ?? [], null, 2);
 });
 
 function exportData(type) {
   dataExporter(
-    logsData?.table || logsData,
+    logsData[state.activeTab] ?? [],
     { name: state.fileName, type },
     true
   );
@@ -110,7 +110,7 @@ onMounted(async () => {
   }
 
   Object.keys(data.data).forEach((key) => {
-    logsData[key] = JSON.stringify(data.data[key], null, 2);
+    logsData[key] = data.data[key];
   });
   state.status = 'idle';
 });

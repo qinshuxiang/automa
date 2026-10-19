@@ -53,7 +53,11 @@ function deleteData({ data, id }) {
       }
     });
 
-    if (persistTasks.length) await Promise.allSettled(persistTasks);
+    // F05 修复：persistTasks 存的是 thunk，必须在 allSettled 处调用，
+    // 否则 Promise.allSettled 收到的是函数而非 Promise，任务体永不执行
+    if (persistTasks.length) {
+      await Promise.allSettled(persistTasks.map((task) => task()));
+    }
 
     if (variableDeleted) this.engine.addRefDataSnapshot('variables');
 

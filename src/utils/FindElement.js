@@ -1,8 +1,6 @@
 import Sizzle from 'sizzle';
-import {
-  querySelectorAllDeep,
-  querySelectorDeep,
-} from '@/lib/query-selector-shadow-dom';
+import { querySelectorAllDeep } from '@/lib/query-selector-shadow-dom';
+import { splitSelectorPath } from './selectorPath';
 
 // Add a custom "Sizzle" pseudo-class selector
 // ":contains": element content will be selected as long as it contains text
@@ -20,35 +18,25 @@ const specialSelectorsRegex = new RegExp(specialSelectors.join('|'));
 
 class FindElement {
   static cssSelector(data, documentCtx = document) {
-    const selector = data.markEl
-      ? `${data.selector.trim()}:not([${data.blockIdAttr}])`
-      : data.selector;
-
+    const selector = data.selector.trim();
+    const shadowParts = splitSelectorPath(selector, '>>');
+    let elements;
     if (specialSelectorsRegex.test(selector)) {
-      // Fix Sizzle incorrect context in iframe, passed as context of iframe
-      const elements = Sizzle(selector, documentCtx);
-      if (!elements) return null;
-
-      return data.multiple ? elements : elements[0];
+      elements = Sizzle(selector, documentCtx);
+    } else if (shadowParts.length > 1) {
+      elements = querySelectorAllDeep(shadowParts.join(' '), documentCtx);
+    } else {
+      elements = documentCtx.querySelectorAll(selector);
     }
-
-    if (selector.includes('>>')) {
-      const newSelector = selector.replaceAll('>>', '');
-
-      return data.multiple
-        ? querySelectorAllDeep(newSelector)
-        : querySelectorDeep(newSelector);
-    }
-
-    if (data.multiple) {
-      const elements = documentCtx.querySelectorAll(selector);
-
-      if (elements.length === 0) return null;
-
-      return elements;
-    }
-
-    return documentCtx.querySelector(selector);
+    const matches = Array.from(elements || []).filter(
+      (element) =>
+        (!data.markEl || !element.hasAttribute(data.blockIdAttr)) &&
+        (!data.excludeLoop ||
+          !element
+            .getAttribute('automa-loop')
+            ?.startsWith(`${data.excludeLoop}--`))
+    );
+    return data.multiple ? matches : matches[0] || null;
   }
 
   static xpath(data, documentCtx = document) {

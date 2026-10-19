@@ -56,13 +56,16 @@ class BackgroundEventsListeners {
   static async onRuntimeStartup() {
     try {
       await initBackup();
+
+      browser.storage.local.remove('workflowStates');
+      (browser.action || browser.browserAction).setBadgeText({ text: '' });
+
+      // 注册失败（如单个触发器数据畸形）必须被捕获：未处理的拒绝会让
+      // 排在后方的定时触发器当日静默失效且无任何记录
+      await BackgroundWorkflowTriggers.reRegisterTriggers(true);
     } catch (error) {
       console.error(error);
     }
-
-    browser.storage.local.remove('workflowStates');
-    (browser.action || browser.browserAction).setBadgeText({ text: '' });
-    BackgroundWorkflowTriggers.reRegisterTriggers(true);
   }
 
   static onHistoryStateUpdated({ frameId, url, tabId }) {

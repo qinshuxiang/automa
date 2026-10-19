@@ -1,7 +1,7 @@
 import { isXPath, objectHasKey, sleep } from '@/utils/helper';
 import { sendMessage } from '@/utils/message';
 import { keyDefinitions } from '@/utils/USKeyboardLayout';
-import { queryElements } from '../handleSelector';
+import { queryElements, getDocumentCtx } from '../handleSelector';
 import { checkExecutionSignal } from '../executionSignal';
 
 const textFieldTags = ['INPUT', 'TEXTAREA'];
@@ -162,16 +162,41 @@ async function pressKeyWithCommand({
   }
 }
 
-async function pressKey({ data, debugMode, activeTabId, signal }) {
-  let element = document.activeElement;
+async function pressKey({
+  data,
+  debugMode,
+  activeTabId,
+  signal,
+  frameSelector,
+}) {
+  const documentCtx = getDocumentCtx(frameSelector);
+  if (!documentCtx) throw new Error('iframe-not-found');
+  let element = documentCtx.activeElement;
 
   if (data.selector) {
-    const customElement = await queryElements({
-      selector: data.selector,
-      findBy: isXPath(data.selector) ? 'xpath' : 'cssSelector',
-    });
+    const customElement = await queryElements(
+      {
+        selector: data.selector,
+        ...data,
+        findBy:
+          data.findBy || (isXPath(data.selector) ? 'xpath' : 'cssSelector'),
+        multiple: false,
+      },
+      signal,
+      documentCtx
+    );
 
-    element = customElement || element;
+    // F02 修复：明确指定 selector 却找不到目标时必须失败，
+    // 不能回退到 document.activeElement 向无关焦点元素输入。
+    // 仅当未指定 selector 时才允许使用当前焦点元素。
+    if (!customElement) {
+      const error = new Error('element-not-found');
+      error.data = { selector: data.selector };
+
+      throw error;
+    }
+
+    element = customElement;
   }
 
   const keys =
@@ -181,6 +206,7 @@ async function pressKey({ data, debugMode, activeTabId, signal }) {
   const pressKeyFunction = debugMode ? pressKeyWithCommand : pressKeyWithJs;
 
   checkExecutionSignal(signal);
+  element?.focus?.();
   await pressKeyFunction({
     keys,
     element,

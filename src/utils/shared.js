@@ -1458,6 +1458,7 @@ export const eventList = [
 export const dataExportTypes = [
   { name: 'JSON', id: 'json' },
   { name: 'CSV', id: 'csv' },
+  { name: 'Excel 工作簿', id: 'xlsx' },
   { name: '纯文本', id: 'plain-text' },
 ];
 
@@ -1486,15 +1487,13 @@ export const contentTypes = [
   { name: 'application/x-www-form-urlencoded', value: 'form' },
 ];
 
+// 中文离线版精简：仅保留中文场景语言，删除 en/fr/it/uk/vi/tr 语言包
+// （en 仍作为 i18n fallbackLocale 保留在 locales/ 目录中）。
+// 旧用户 settings.locale 为已删语言时，vueI18n 的守卫会回退到 zh。
 export const supportLocales = [
-  { id: 'en', name: '英语' },
-  { id: 'fr', name: '法语' },
-  { id: 'it', name: '意大利语' },
-  { id: 'uk', name: '乌克兰语' },
-  { id: 'vi', name: '越南语' },
   { id: 'zh', name: '简体中文' },
   { id: 'zh-TW', name: '繁体中文' },
-  { id: 'tr', name: '土耳其语' },
+  { id: 'en', name: '英语' },
 ];
 
 export const communities = [

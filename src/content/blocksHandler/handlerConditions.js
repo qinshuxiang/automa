@@ -32,16 +32,22 @@ async function handleConditionElement({ data, type, id, frameSelector }) {
       if (!element) return false;
 
       const { visibility, display } = getComputedStyle(element);
-
-      return visibility !== 'hidden' && display !== 'none';
+      return (
+        visibility !== 'hidden' &&
+        visibility !== 'collapse' &&
+        display !== 'none' &&
+        element.getClientRects().length > 0
+      );
     },
     invisible: () => {
       if (!element) return false;
 
       const { visibility, display } = getComputedStyle(element);
-      const styleHidden = visibility === 'hidden' || display === 'none';
-
-      return styleHidden || !visibleInViewport(element);
+      const styleHidden =
+        visibility === 'hidden' ||
+        visibility === 'collapse' ||
+        display === 'none';
+      return styleHidden || element.getClientRects().length === 0;
     },
     attribute: ({ attrName }) => {
       if (!element || !element.hasAttribute(attrName)) return null;

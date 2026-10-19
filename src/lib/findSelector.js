@@ -2,7 +2,16 @@ import { finder as finderLib } from '@medv/finder';
 
 const ariaAttrs = ['data-testid'];
 
-export const finder = finderLib;
+export function finder(element, options = {}) {
+  const root = element.getRootNode();
+  if (root.host) {
+    const rest = { ...options };
+    delete rest.root;
+    const inner = finderLib(element, { ...rest, root });
+    return `${finder(root.host, rest)} >> ${inner}`;
+  }
+  return finderLib(element, { root: element.ownerDocument, ...options });
+}
 
 export default function (element, options = {}) {
   let selector = finder(element, {

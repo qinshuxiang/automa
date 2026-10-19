@@ -334,6 +334,15 @@ class WorkflowWorker {
       return;
     }
 
+    if (!this.blocksDetail[block.label]) {
+      const message = `此离线版不支持节点：${block.label}`;
+      await this.engine.destroy('error', message, {
+        blockId: block.id,
+        message,
+      });
+      return;
+    }
+
     const blockHandler = this.engine.blocksHandler[toCamelCase(block.label)];
     const handler =
       !blockHandler && this.blocksDetail[block.label].category === 'interaction'

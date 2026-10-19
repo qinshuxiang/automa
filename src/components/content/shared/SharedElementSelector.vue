@@ -42,7 +42,7 @@
 </template>
 <script setup>
 import { reactive, watch, onBeforeUnmount, toRaw } from 'vue';
-import { finder } from '@medv/finder';
+import { finder } from '@/lib/findSelector';
 import { debounce } from '@/utils/helper';
 import getSelectorOptions from '@/content/elementSelector/getSelectorOptions';
 import { generateXPath, getElementPath, getElementRect } from '@/content/utils';
@@ -199,6 +199,21 @@ function retrieveElementsRect({ clientX, clientY, target: eventTarget }, type) {
     frameElementRect = null;
   }
 
+  // open Shadow DOM 中逐层命中实际元素；XPath 不跨 ShadowRoot。
+  if (props.selectorType === 'css') {
+    let inner = target.shadowRoot?.elementFromPoint(
+      clientX - (frameElementRect?.left || 0),
+      clientY - (frameElementRect?.top || 0)
+    );
+    while (inner && inner !== target) {
+      target = inner;
+      inner = target.shadowRoot?.elementFromPoint(
+        clientX - (frameElementRect?.left || 0),
+        clientY - (frameElementRect?.top || 0)
+      );
+    }
+  }
+
   let elementsRect = [];
   const withElOptions = type === 'selected';
   const withAttribute = props.withAttributes && type === 'selected';
@@ -239,7 +254,10 @@ function retrieveElementsRect({ clientX, clientY, target: eventTarget }, type) {
     });
 
     if (frameElement) {
-      const frameSelector = finder(frameElement, selectorOptions);
+      const frameSelector =
+        props.selectorType === 'css'
+          ? finder(frameElement, selectorOptions)
+          : generateXPath(frameElement);
       selector = `${frameSelector} |> ${selector}`;
     }
 

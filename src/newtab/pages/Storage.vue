@@ -5,7 +5,7 @@
         {{ t('common.storage') }}
       </h1>
       <a
-        href="https://docs.automa.site/reference/storage.html"
+        href="docs/使用手册.html#sec5"
         title="Docs"
         class="ml-2 text-gray-600 dark:text-gray-200"
         target="_blank"

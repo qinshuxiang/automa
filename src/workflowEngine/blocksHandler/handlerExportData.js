@@ -14,7 +14,7 @@ async function exportData({ data, id }, { refData }) {
   let payload = refData.table;
 
   if (dataToExport === 'variable') {
-    payload = refData.variables[data.variableName] || [];
+    payload = refData.variables[data.variableName] ?? [];
 
     if (!Array.isArray(payload)) {
       payload = [payload];

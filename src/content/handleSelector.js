@@ -1,3 +1,4 @@
+import { splitSelectorPath } from '@/utils/selectorPath';
 import FindElement from '@/utils/FindElement';
 import { visibleInViewport, isXPath } from '@/utils/helper';
 import { checkExecutionSignal } from './executionSignal';
@@ -15,11 +16,11 @@ export function getDocumentCtx(frameSelector) {
 
   let documentCtx = document;
 
-  const iframeSelectors = frameSelector.split('|>');
-  const type = isXPath(frameSelector) ? 'xpath' : 'cssSelector';
+  const iframeSelectors = splitSelectorPath(frameSelector, '|>');
   iframeSelectors.forEach((selector) => {
     if (!documentCtx) return;
 
+    const type = isXPath(selector) ? 'xpath' : 'cssSelector';
     const element = FindElement[type]({ selector }, documentCtx);
     documentCtx = element?.contentDocument;
   });
@@ -94,15 +95,13 @@ export default async function (
     return null;
   }
 
-  const documentCtx = getDocumentCtx(frameSelector);
-
-  if (!documentCtx) {
-    if (onError) onError(new Error('iframe-not-found'));
-
-    return null;
-  }
-
   try {
+    const documentCtx = getDocumentCtx(frameSelector);
+    if (!documentCtx) {
+      if (onError) onError(new Error('iframe-not-found'));
+      return null;
+    }
+
     data.blockIdAttr = `block--${id}`;
 
     const elements = await queryElements(data, signal, documentCtx);

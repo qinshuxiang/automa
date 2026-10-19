@@ -1,15 +1,7 @@
 <template>
-  <div
-    v-if="workflowStore.getWorkflows.length === 0"
-    class="md:flex items-center md:text-left text-center py-12"
-  >
-    <img src="@/assets/svg/alien.svg" class="w-96" />
-    <div class="ml-4">
-      <h1 class="mb-6 max-w-md text-2xl font-semibold">
-        {{ t('message.empty') }}
-      </h1>
-    </div>
-  </div>
+  <p v-if="workflowStore.getWorkflows.length === 0" class="mb-6 text-gray-500">
+    暂无工作流。点击“新建工作流”开始，或导入已有的工作流文件。
+  </p>
   <template v-else>
     <div v-if="pinnedWorkflows.length > 0" class="mb-8 border-b pb-8">
       <div class="flex items-center">
@@ -369,7 +361,7 @@ function togglePinWorkflow(workflow) {
 const menu = [
   {
     id: 'copy-id',
-    name: 'Copy workflow id',
+    name: '复制工作流标识',
     icon: 'riFileCopyLine',
     action: (workflow) => {
       navigator.clipboard.writeText(workflow.id).catch((error) => {

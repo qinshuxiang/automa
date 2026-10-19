@@ -141,7 +141,7 @@
       />
       <div class="mt-3">
         <a
-          href="https://docs.automa.site/workflow/expressions.html"
+          href="docs/使用手册.html#sec5"
           rel="noopener"
           class="border-b text-primary"
           target="_blank"

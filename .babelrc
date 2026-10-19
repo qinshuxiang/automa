@@ -5,7 +5,7 @@
       "useBuiltIns": "usage",
       "corejs": 3,
       "targets": {
-        "browsers": "last 2 Chrome versions"
+        "chrome": "90"
       }
     }]
   ]

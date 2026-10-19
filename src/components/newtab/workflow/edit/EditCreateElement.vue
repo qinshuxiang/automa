@@ -71,7 +71,7 @@
               <a
                 v-for="func in availableFuncs"
                 :key="func.id"
-                :href="`https://docs.automa.site/blocks/javascript-code.html#${func.id}`"
+                :href="`docs/使用手册.html#sec5`"
                 target="_blank"
                 rel="noopener"
                 class="bg-box-transparent inline-block rounded-md p-1 text-sm"

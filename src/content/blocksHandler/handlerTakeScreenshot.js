@@ -1,5 +1,6 @@
 import { sleep } from '@/utils/helper';
 import { sendMessage } from '@/utils/message';
+import { getElementPosition } from '../utils';
 import handleSelector from '../handleSelector';
 
 function findScrollableElement(
@@ -44,11 +45,12 @@ function canvasToBase64(canvas, { format, quality }) {
   return canvas.toDataURL(`image/${format}`, quality / 100);
 }
 function loadAsyncImg(src) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
       resolve(image);
     };
+    image.onerror = () => reject(new Error('截图图像加载失败'));
     image.src = src;
   });
 }
@@ -62,12 +64,13 @@ async function takeScreenshot(tabId, options) {
 
   return imageUrl;
 }
-async function captureElement({ selector, tabId, options, $frameRect }) {
-  const element = await handleSelector(
-    // ? not support frameSelector ?
-    { data: { selector }, tabId },
-    { returnElement: true }
-  );
+async function captureElement(block) {
+  const {
+    tabId,
+    options,
+    data: { $frameRect },
+  } = block;
+  const element = await handleSelector(block, { returnElement: true });
 
   if (!element) {
     const error = new Error('element-not-found');
@@ -86,7 +89,8 @@ async function captureElement({ selector, tabId, options, $frameRect }) {
 
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  const { height, width, x, y } = element.getBoundingClientRect();
+  const { height, width } = element.getBoundingClientRect();
+  const position = await getElementPosition(element);
 
   let windowWidth = window.innerWidth;
   let windowHeight = window.innerHeight;
@@ -105,13 +109,8 @@ async function captureElement({ selector, tabId, options, $frameRect }) {
   canvas.width = newWidth;
   canvas.height = newHeight;
 
-  let xPos = x;
-  let yPos = y;
-
-  if ($frameRect) {
-    yPos += $frameRect.y;
-    xPos += $frameRect.x;
-  }
+  let xPos = position.x - width / 2;
+  let yPos = position.y - height / 2;
 
   xPos *= diffWidth;
   yPos *= diffHeight;
@@ -131,21 +130,13 @@ async function captureElement({ selector, tabId, options, $frameRect }) {
   return canvasToBase64(canvas, options);
 }
 
-export default async function ({
-  tabId,
-  options,
-  data: { type, selector, $frameRect },
-}) {
-  if (type === 'element') {
-    const imageUrl = await captureElement({
-      tabId,
-      options,
-      selector,
-      $frameRect,
-    });
-
-    return imageUrl;
-  }
+export default async function (block) {
+  const {
+    tabId,
+    options,
+    data: { type },
+  } = block;
+  if (type === 'element') return captureElement(block);
 
   document.body.classList.add('is-screenshotting');
 

@@ -53,6 +53,7 @@
 import { onMounted, reactive, toRaw, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { nanoid } from 'nanoid';
 import defu from 'defu';
 import browser from 'webextension-polyfill';
@@ -71,6 +72,7 @@ const browserEvents = {
 const { t } = useI18n();
 const router = useRouter();
 const workflowStore = useWorkflowStore();
+const toast = useToast();
 
 const state = reactive({
   name: '',
@@ -236,7 +238,10 @@ async function stopRecording() {
 function removeBlock(index) {
   state.flows.splice(index, 1);
 
-  browser.storage.local.set({ recording: toRaw(state) });
+  browser.storage.local.set({ recording: toRaw(state) }).catch((error) => {
+    console.error(error);
+    toast.error('保存录制数据失败，请停止录制后重试');
+  });
 }
 function onStorageChanged({ recording }) {
   if (!recording) return;

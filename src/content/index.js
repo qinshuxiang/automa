@@ -1,3 +1,4 @@
+import { splitSelectorPath } from '@/utils/selectorPath';
 import browser from 'webextension-polyfill';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash.clonedeep';
@@ -5,6 +6,7 @@ import findSelector from '@/lib/findSelector';
 import { sendMessage } from '@/utils/message';
 import automa from '@business';
 import { toCamelCase, isXPath } from '@/utils/helper';
+import { querySelectorAllDeep } from '@/lib/query-selector-shadow-dom';
 import handleSelector, {
   queryElements,
   getDocumentCtx,
@@ -14,7 +16,11 @@ import showExecutedBlock from './showExecutedBlock';
 import shortcutListener from './services/shortcutListener';
 import initCommandPalette from './commandPalette';
 // import elementObserver from './elementObserver';
-import { elementSelectorInstance } from './utils';
+import {
+  elementSelectorInstance,
+  mapFramePoint,
+  getPointPosition,
+} from './utils';
 import { abortExecutionSignal, checkExecutionSignal } from './executionSignal';
 
 const isMainFrame = window.self === window.top;
@@ -79,27 +85,25 @@ function messageToFrame(frameElement, blockData) {
 }
 async function executeBlock(data) {
   const removeExecutedBlock = showExecutedBlock(data, data.executedBlockOnWeb);
-  if (data.data?.selector?.includes('|>')) {
-    const selectorsArr = data.data.selector.split('|>');
+  const selectorsArr = splitSelectorPath(data.data?.selector || '', '|>');
+  if (selectorsArr.length > 1) {
     const selector = selectorsArr.pop();
     const frameSelector = selectorsArr.join('|>');
 
     const framElSelector = selectorsArr.pop();
 
-    let findBy = data?.data?.findBy;
-    if (!findBy) {
-      findBy = isXPath(frameSelector) ? 'xpath' : 'cssSelector';
-    }
+    const findBy = isXPath(framElSelector) ? 'xpath' : 'cssSelector';
 
     const documentCtx = getDocumentCtx(selectorsArr.join('|>'));
     const frameElement = await queryElements(
       {
         findBy,
         multiple: false,
-        waitForSelector: 5000,
+        waitForSelector: true,
+        waitSelectorTimeout: 5000,
         selector: framElSelector,
       },
-      undefined,
+      data.signal,
       documentCtx
     );
     const frameError = (message) => {
@@ -149,6 +153,41 @@ async function executeBlock(data) {
 }
 async function messageListener({ data, source }) {
   try {
+    if (data.type === 'automa:get-frame-position') {
+      const frame = querySelectorAllDeep('iframe, frame').find(
+        (element) => element.contentWindow === source
+      );
+      if (
+        !frame ||
+        !Number.isFinite(data.position?.x) ||
+        !Number.isFinite(data.position?.y)
+      )
+        return;
+      try {
+        const position = await getPointPosition(
+          window,
+          mapFramePoint(frame, data.position)
+        );
+        source.postMessage(
+          {
+            type: 'automa:frame-position',
+            messageId: data.messageId,
+            position,
+          },
+          '*'
+        );
+      } catch (error) {
+        source.postMessage(
+          {
+            type: 'automa:frame-position',
+            messageId: data.messageId,
+            error: error.message,
+          },
+          '*'
+        );
+      }
+      return;
+    }
     if (data.type === 'automa:get-frame' && isMainFrame) {
       let frameRect = { x: 0, y: 0 };
 
@@ -385,28 +424,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     'Do you want to add this workflow into Automa?'
   );
   if (!accept) return;
-  const workflow = JSON.parse(document.documentElement.innerText);
 
-  const { workflows: workflowsStorage } = await browser.storage.local.get(
-    'workflows'
-  );
+  try {
+    const workflow = JSON.parse(document.documentElement.innerText);
 
-  const workflowId = nanoid();
-  const workflowData = {
-    ...workflow,
-    id: workflowId,
-    dataColumns: [],
-    createdAt: Date.now(),
-    table: workflow.table || workflow.dataColumns,
-  };
+    // 有效 JSON 但不可能是工作流数据（null、数字、字符串、数组）同样拒绝
+    if (!workflow || typeof workflow !== 'object' || Array.isArray(workflow)) {
+      throw new Error('文件内容不是有效的 Automa 工作流数据');
+    }
 
-  if (Array.isArray(workflowsStorage)) {
-    workflowsStorage.push(workflowData);
-  } else {
-    workflowsStorage[workflowId] = workflowData;
+    const { workflows: workflowsStorage } = await browser.storage.local.get(
+      'workflows'
+    );
+
+    const workflowId = nanoid();
+    const workflowData = {
+      ...workflow,
+      id: workflowId,
+      dataColumns: [],
+      createdAt: Date.now(),
+      table: workflow.table || workflow.dataColumns,
+    };
+
+    // workflows 键缺失（如存储被清空）时按空对象起步，不再抛 TypeError
+    let workflows = workflowsStorage;
+    if (Array.isArray(workflows)) {
+      workflows.push(workflowData);
+    } else {
+      workflows = { ...workflows, [workflowId]: workflowData };
+    }
+
+    await browser.storage.local.set({ workflows });
+
+    alert('Workflow installed');
+  } catch (error) {
+    console.error(error);
+    alert('工作流安装失败：文件内容不是有效的 Automa 工作流数据');
   }
-
-  await browser.storage.local.set({ workflows: workflowsStorage });
-
-  alert('Workflow installed');
 });

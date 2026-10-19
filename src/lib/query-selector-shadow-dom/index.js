@@ -83,7 +83,7 @@ function _querySelectorDeep(selector, findMany, root, allElements = null) {
           root
         );
         if (findMany) {
-          acc = acc.concat(possibleElements.filter(findElements));
+          acc = Array.from(new Set(acc.concat(possibleElements.filter(findElements))));
           return acc;
         }
         acc = possibleElements.find(findElements);
@@ -176,11 +176,11 @@ function findParentOrHost(element, root) {
 }
 
 const getShadowRoot = (element) => {
-  if (element === document) return element;
+  if (element.nodeType === 9) return null;
 
   return BROWSER_TYPE === 'firefox'
     ? element.openOrClosedShadowRoot
-    : chrome.dom.openOrClosedShadowRoot(element);
+    : (chrome.dom?.openOrClosedShadowRoot?.(element) || element.shadowRoot);
 }
 
 /**

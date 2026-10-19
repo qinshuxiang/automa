@@ -24,7 +24,11 @@ class WorkflowState {
       this.storageTimeout = null;
 
       const states = Object.fromEntries(this.states);
-      this.storage.set(this.key, states);
+      this.storage
+        .set(this.key, states)
+        .catch((error) =>
+          console.error('保存工作流状态失败（断点续执状态可能丢失）:', error)
+        );
     }, 1000);
   }
 

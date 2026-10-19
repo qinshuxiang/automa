@@ -1,9 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import browser from 'webextension-polyfill';
 import cloneDeep from 'lodash.clonedeep';
-import dayjs from '@/lib/dayjs';
 import { parseJSON } from '@/utils/helper';
-import { fetchApi } from '@/utils/api';
 import { sendMessage } from '@/utils/message';
 import convertWorkflowData from '@/utils/convertWorkflowData';
 import getBlockMessage from '@/utils/getBlockMessage';
@@ -157,17 +155,6 @@ export function startWorkflowExec(workflowData, options, isPopup = true) {
           variables: { ...engine.referenceData.variables },
         });
       });
-    }
-  });
-
-  browser.storage.local.get('checkStatus').then(({ checkStatus }) => {
-    const isSameDay = dayjs().isSame(checkStatus, 'day');
-    if (!isSameDay || !checkStatus) {
-      fetchApi('/status')
-        .then((response) => response.json())
-        .then(() => {
-          browser.storage.local.set({ checkStatus: new Date().toString() });
-        });
     }
   });
 

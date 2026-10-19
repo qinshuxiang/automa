@@ -72,7 +72,33 @@ async function forms(block) {
   if (data.multiple) {
     const promises = Array.from(elements).map((element) => typeText(element));
 
-    await Promise.allSettled(promises);
+    // F03 修复：allSettled 的 rejected 必须检查并传播，
+    // 否则全部写入失败时节点仍然报成功。与单元素路径保持一致，
+    // 原样抛出首个失败原因，并在 error.data 上附带统计信息
+    // （失败数/总数），便于定位第几个目标出错。
+    // synchronizedLock 的释放由 typeText 内部 finally 保证，不受影响。
+    const settledResults = await Promise.allSettled(promises);
+    const firstFailure = settledResults.find(
+      (result) => result.status === 'rejected'
+    );
+
+    if (firstFailure) {
+      const failureCount = settledResults.filter(
+        (result) => result.status === 'rejected'
+      ).length;
+      const error =
+        firstFailure.reason instanceof Error
+          ? firstFailure.reason
+          : new Error(String(firstFailure.reason ?? '未知错误'));
+
+      error.data = {
+        ...(error.data || {}),
+        failedCount: failureCount,
+        totalCount: settledResults.length,
+      };
+
+      throw error;
+    }
   } else {
     await typeText(elements);
   }

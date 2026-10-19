@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自动化工具 使用手册（v1.28.27 中文离线版）</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #1f2933;
+    background: #f5f6f7;
+  }
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 40px 56px 64px;
+  }
+  header.masthead { border-bottom: 3px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+  header.masthead h1 { margin: 0 0 10px; font-size: 28px; color: #10233f; }
+  header.masthead .meta { color: #52606d; font-size: 14px; margin: 2px 0; }
+  nav.toc {
+    background: #eef3fb;
+    border: 1px solid #d3e0f2;
+    border-radius: 8px;
+    padding: 14px 22px;
+    margin-bottom: 32px;
+  }
+  nav.toc .toc-title { font-weight: 700; margin-bottom: 6px; color: #10233f; }
+  nav.toc ol { margin: 0; padding-left: 26px; columns: 2; column-gap: 40px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: #1d4ed8; text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  h2 {
+    font-size: 21px;
+    color: #10233f;
+    border-bottom: 2px solid #e3e8ee;
+    padding-bottom: 6px;
+    margin: 40px 0 14px;
+    scroll-margin-top: 12px;
+  }
+  h3 { font-size: 17px; color: #1d4ed8; margin: 26px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 28px; }
+  li { margin: 4px 0; }
+  li > ul, li > ol { margin: 3px 0; }
+  code, .k {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.92em;
+    background: #eef1f4;
+    border: 1px solid #dfe4ea;
+    border-radius: 4px;
+    padding: 1px 5px;
+    word-break: break-all;
+  }
+  .note {
+    background: #fff8e6;
+    border-left: 4px solid #d9a406;
+    padding: 8px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+  }
+  .flow { color: #4a5568; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; margin: 10px 0; }
+  footer.doc-footer { margin-top: 48px; border-top: 1px solid #e3e8ee; padding-top: 12px; color: #7b8794; font-size: 13px; }
+  a.back { font-size: 12px; color: #94a3b8; text-decoration: none; margin-left: 8px; }
+  a.back:hover { color: #1d4ed8; }
+  @media (max-width: 640px) {
+    .page { padding: 20px 18px 40px; }
+    nav.toc ol { columns: 1; }
+  }
+  @media print {
+    body { background: #fff; font-size: 12pt; }
+    .page { max-width: none; padding: 0; }
+    nav.toc { background: #fff; border: 1px solid #ccc; }
+    h2 { page-break-after: avoid; break-after: avoid; }
+    li, p, table { page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+    header.masthead h1 { font-size: 20pt; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="masthead">
+  <h1>自动化工具 使用手册</h1>
+  <p class="meta">适用版本：Automa v1.28.27 中文离线定制版（Manifest V2）</p>
+  <p class="meta">适用环境：Chromium 90 及以上内核浏览器（UOS/统信浏览器、Chromium 90 浏览器等）</p>
+  <p class="meta">使用场景：政务内网离线网页自动化</p>
+</header>
+
+<nav class="toc" id="top" aria-label="目录">
+  <div class="toc-title">目录</div>
+  <ol>
+    <li><a href="#sec1">简介</a></li>
+    <li><a href="#sec2">安装与启动</a></li>
+    <li><a href="#sec3">界面导览</a></li>
+    <li><a href="#sec4">快速上手：最小工作流</a></li>
+    <li><a href="#sec5">常用块速查</a></li>
+    <li><a href="#sec6">表格分页抓取模板</a></li>
+    <li><a href="#sec7">数据导出</a></li>
+    <li><a href="#sec8">导入导出与加密备份</a></li>
+    <li><a href="#sec9">定时任务</a></li>
+    <li><a href="#sec10">常见问题</a></li>
+    <li><a href="#sec11">故障排查</a></li>
+  </ol>
+</nav>
+
+<h2 id="sec1">1. 简介<a class="back" href="#top">返回目录</a></h2>
+<ul>
+  <li>这是什么：一款运行在浏览器里的网页自动化工具（基于开源项目 Automa 定制），用「搭积木」的方式把打开网页、点击、填表、抓取文本、导出文件等操作串成工作流，一次搭建、反复执行。</li>
+  <li>工作流由「块」（block）组成：每个块完成一个动作，块与块之间用连线表示执行顺序。抓取到的数据统一存放在工作流自带的表格中，最后可导出为文件。</li>
+  <li>离线特性：
+    <ul>
+      <li>无云端依赖。工作流编辑、执行、日志、表格数据全部保存在本机浏览器存储中（IndexedDB 与 storage.local），不连接任何外部服务器。</li>
+      <li>导入导出、备份均以本地文件（JSON 等）方式进行，可用 U 盘或内网文件系统在同事间分发。</li>
+      <li>界面与文档为简体中文。</li>
+    </ul>
+  </li>
+  <li>适用浏览器：任何 Chromium 90 及以上内核的浏览器，包括 UOS/统信浏览器。本扩展 manifest 中声明了 minimum_chrome_version 为 90，旧内核浏览器无法加载。</li>
+  <li>数据归属与安全：数据只存在于当前浏览器的用户配置目录中。清理浏览器历史数据会连带删除工作流与表格数据，请定期在「设置」中做本地备份（见第 8 节）。</li>
+  <li>与上游版本的主要差异：界面全面汉化；移除 Google Sheets、Google Drive 等联网服务块；备份与恢复为本地完整快照机制；元素选择与条件构建器内置中文场景正则模板。</li>
+</ul>
+
+<h2 id="sec2">2. 安装与启动<a class="back" href="#top">返回目录</a></h2>
+<p>安装（加载已解压的扩展程序）：</p>
+<ol>
+  <li>打开浏览器的扩展管理页：在地址栏输入 <code>chrome://extensions</code>，或从浏览器菜单进入「扩展程序」。</li>
+  <li>打开右上角（或侧栏）的「开发者模式」开关。</li>
+  <li>点击「加载已解压的扩展程序」，选择本目录下的 Chromium90扩展 文件夹。</li>
+  <li>加载成功后，扩展管理页出现「自动化工具」卡片（版本 1.28.27），工具栏出现扩展图标。</li>
+</ol>
+<p>默认快捷键（见 manifest.json commands 段）：</p>
+<ul>
+  <li>Alt+A：打开工作流管理页（仪表盘）。</li>
+  <li>Alt+P：启动元素选择器，在网页上点选元素并生成 CSS 选择器。</li>
+  <li>这两个快捷键在浏览器全屏或某些特殊页面（如浏览器自身设置页）下可能不响应，属正常现象。</li>
+</ul>
+<p>修改快捷键：</p>
+<ol>
+  <li>进入扩展管理页 <code>chrome://extensions</code>。</li>
+  <li>点击页面左上角菜单图标，选择「键盘快捷方式」（部分浏览器叫「快捷键」）。</li>
+  <li>找到「自动化工具」的两条命令（打开工作流管理界面、打开元素选择器），点击输入框后按下想要的新组合键即可。</li>
+</ol>
+
+<h2 id="sec3">3. 界面导览<a class="back" href="#top">返回目录</a></h2>
+<p>弹出面板（点击工具栏扩展图标）：</p>
+<ul>
+  <li>顶部一排按钮：录制入口（跳转到管理页的录制功能）、元素选择器、打开管理页。</li>
+  <li>搜索框：按名称快速过滤工作流。</li>
+  <li>工作流卡片：点击卡片上的运行按钮直接执行该工作流；卡片菜单还支持置顶、重命名、删除、打开详情。</li>
+  <li>可按文件夹筛选工作流；置顶的工作流显示在最上方，适合把常用流程固定。</li>
+  <li>面板内执行与在编辑器中运行效果相同，日志同样记录在「日志」页。</li>
+</ul>
+<p>管理页（按 Alt+A 或点面板中的主页按钮打开）：</p>
+<ul>
+  <li>左侧边栏共六个入口：工作流、包、计划、存储、日志、设置。</li>
+  <li>工作流页：
+    <ul>
+      <li>工作流列表，右上角有「新建工作流」和「导入」按钮。</li>
+      <li>卡片右键菜单可导出、重命名、删除、复制；支持文件夹分组。</li>
+    </ul>
+  </li>
+  <li>计划页：集中查看带定时触发的工作流及其下次执行时间。</li>
+  <li>存储页（表格 Tables）：
+    <ul>
+      <li>查看工作流抓取到的表格数据；每个表格可单独编辑行与列、修改列定义。</li>
+      <li>表格数据来源于块中填写的「数据列」列名。</li>
+    </ul>
+  </li>
+  <li>日志页：
+    <ul>
+      <li>按工作流查看每次执行的历史记录、报错与抓取到的数据。</li>
+      <li>单条记录可展开查看块级明细，数据可再导出。</li>
+    </ul>
+  </li>
+  <li>设置页：
+    <ul>
+      <li>基础设置：界面语言、日志保留天数与数量上限。</li>
+      <li>「备份」子页：完整本地备份与恢复（见第 8 节）。</li>
+      <li>「编辑器」「快捷键」子页：编辑器行为与扩展内快捷键。</li>
+    </ul>
+  </li>
+</ul>
+<p>工作流编辑器（从工作流列表点开某个工作流）：</p>
+<ul>
+  <li>左侧块面板：按类别（通用、浏览器、网页交互、条件、数据等）分组列出全部块，拖入画布使用；常用块可点右上角图钉固定到顶部。</li>
+  <li>画布：拖动块连线组织执行顺序；支持框选、缩放、小地图。</li>
+  <li>顶部工具栏：运行（手动触发）、调试、工作流设置（表格列定义、全局数据、参数等）、保存。</li>
+  <li>块的通用设置：双击块打开配置；块设置里还可禁用该块（跳过执行）、设置块超时。</li>
+  <li>修改后未保存就关闭会丢失改动，请养成先保存的习惯。</li>
+</ul>
+<p>常用操作速查：</p>
+<ul>
+  <li>新建工作流：管理页「工作流」→ 右上角「新建工作流」。</li>
+  <li>导入工作流：管理页「工作流」→ 右上角「导入」→ 选择 JSON 文件。</li>
+  <li>导出工作流：工作流卡片右键菜单或编辑器动作菜单 → 导出。</li>
+  <li>手动运行：编辑器顶部「运行」按钮，或弹出面板中点工作流卡片的运行按钮。</li>
+  <li>停止运行：工作流运行时打开该工作流页面可停止；工作流状态块也能在流程中停止运行。</li>
+  <li>查看抓取结果：管理页「存储」（表格）或「日志」中对应记录。</li>
+  <li>选元素：网页中按 Alt+P，或弹出面板点元素选择器按钮。</li>
+</ul>
+
+<h2 id="sec4">4. 快速上手：最小工作流<a class="back" href="#top">返回目录</a></h2>
+<p>目标：打开一个网页，提取页面标题文本，并把结果导出为 CSV 文件。全程约 5 分钟。</p>
+<ol>
+  <li>新建工作流：
+    <ul>
+      <li>按 Alt+A 打开管理页，进入「工作流」页。</li>
+      <li>点击「新建工作流」，输入名称（例如：提取标题示例），确认后自动进入编辑器画布。</li>
+    </ul>
+  </li>
+  <li>放置触发器：
+    <ul>
+      <li>从左侧块面板把「触发器」（trigger）拖入画布。每个工作流都必须以触发器开始，否则无法运行。</li>
+      <li>双击打开设置，触发类型保持「手动」即可（点击运行按钮开始执行）。</li>
+    </ul>
+  </li>
+  <li>打开网页：
+    <ul>
+      <li>把「新建标签页」（new-tab）拖入画布，从触发器右侧的连接点拖一条线到它。</li>
+      <li>双击打开设置，在 URL 栏填入目标页面地址，例如 <code>https://example.com/report</code>。</li>
+      <li>勾选「等待标签页加载完成」（waitTabLoaded），确保后续抓取时页面已打开。</li>
+    </ul>
+  </li>
+  <li>提取标题：
+    <ul>
+      <li>把「获取文本」（get-text）拖入画布，连到新建标签页后面。</li>
+      <li>选择器填 <code>h1</code>（示例页面的大标题；实际页面建议按 Alt+P 用元素选择器点选获取）。</li>
+      <li>「数据列」（dataColumn）填一个列名，例如 标题；「添加到表格」保持勾选，这样抓到的文本会按列存入表格。</li>
+      <li>如果元素出现较慢，勾选「等待选择器出现」（waitForSelector）并把等待时间调大到 10000 毫秒。</li>
+    </ul>
+  </li>
+  <li>导出 CSV：
+    <ul>
+      <li>把「导出数据」（export-data）拖入画布，连到获取文本后面。</li>
+      <li>「导出内容」选「数据列」（data-columns），「导出为」选 CSV，文件名填 标题结果。</li>
+      <li>CSV 选项中保持「BOM 头」勾选（Excel 打开中文不乱码），分隔符保持逗号。</li>
+    </ul>
+  </li>
+  <li>保存并运行：
+    <ul>
+      <li>点击编辑器顶部的保存按钮，然后点击「运行」按钮。</li>
+      <li>浏览器会自动打开目标页面、抓取标题并下载 CSV，全部只需几秒。</li>
+      <li>CSV 文件出现在浏览器的默认下载目录中。</li>
+    </ul>
+  </li>
+  <li>查看结果：
+    <ul>
+      <li>管理页「存储」里能看到表格中的数据行，可直接编辑或删除。</li>
+      <li>管理页「日志」里能看到本次执行记录、每个块的耗时以及导出的数据。</li>
+    </ul>
+  </li>
+</ol>
+<p>后续改进：把获取文本块的 multiple 勾选上即可一次抓取同类元素的多条文本（如列表页所有标题）；配合「循环数据」或「重复任务」可扩展为多页抓取（见第 6 节模板）。</p>
+
+<h2 id="sec5">5. 常用块速查<a class="back" href="#top">返回目录</a></h2>
+<div class="note">以下块清单以源码 shared.js 的 taskBlocks 为准（共 56 个，按类别归纳）。本版已移除 Google Sheets、Google Drive 等联网服务块；源码中仍保留一个「HTTP 请求」（webhook）块属于上游遗留，内网环境请勿使用它连接外部地址。</div>
+
+<h3>触发器与通用</h3>
+<ul>
+  <li>触发器（trigger）：工作流的起点，决定工作流何时、如何开始。
+    <ul>
+      <li>触发类型（type）在本版 UI 中共 9 种：手动（manual，默认）、间隔（interval）、Cron 任务（cron-job）、在特定日期（date）、在特定的星期几（specific-day）、访问网站时（visit-web）、键盘快捷键（keyboard-shortcut）、上下文菜单（context-menu）、浏览器启动时（on-startup）。</li>
+      <li>一个工作流可添加多个触发器；触发器 URL 与说明字段支持变量引用。</li>
+    </ul>
+  </li>
+  <li>执行工作流（execute-workflow）：在当前工作流中调用另一个本地工作流。
+    <ul>
+      <li>可传递全局数据（globalData）与变量，支持把当前工作流的全部变量一次性带入。</li>
+      <li>适合把公共流程抽成子流程复用。</li>
+    </ul>
+  </li>
+  <li>延迟（delay）：暂停指定毫秒（默认 500）再继续，用于等待页面渲染或动画完成。</li>
+  <li>等待连接（wait-connections）：当流程分成多条分支时，等待所有分支到达后再继续。
+    <ul><li>超时默认 10000 毫秒；可指定只等待某条特定分支。</li></ul>
+  </li>
+  <li>导出数据（export-data）：把表格或变量导出为本地文件（详见第 7 节）。</li>
+  <li>剪贴板（clipboard）：读取系统剪贴板文本或写入文本，可存入表格或变量。</li>
+  <li>通知（notification）：弹出浏览器桌面通知，可自定义标题与内容。</li>
+  <li>注释（note）：画布上的便签，仅作说明用，不影响执行。</li>
+  <li>模块组（blocks-group）：把多个块折叠成一组，便于整理复杂画布。</li>
+  <li>参数提示（parameter-prompt）：执行到该块时弹出窗口要求用户输入参数。
+    <ul><li>超时默认 60000 毫秒；配合触发器的参数设置可实现每次执行时人工输入条件。</li></ul>
+  </li>
+  <li>工作流状态（workflow-state）：停止当前或其他正在运行的工作流。</li>
+  <li>Block package（block-package）：模块包，把常用流程片段保存为可复用、可导入的包。</li>
+</ul>
+
+<h3>浏览器与标签页</h3>
+<ul>
+  <li>新建标签页（new-tab）：打开一个 URL。
+    <ul>
+      <li>url：目标地址，支持变量引用。</li>
+      <li>active：是否设为活动标签页；waitTabLoaded：等待加载完成后再继续。</li>
+      <li>customUserAgent 与 userAgent：自定义 UA；tabZoom：页面缩放；inGroup：放入标签页组。</li>
+    </ul>
+  </li>
+  <li>活动标签页（active-tab）：把当前活动标签页设为后续操作的目标，无需配置。</li>
+  <li>切换标签页（switch-tab）：按 URL 匹配模式（matchPattern）、标题或索引查找并切换标签页；找不到时可选择新建。</li>
+  <li>新建窗口（new-window）：新建浏览器窗口，可设位置、宽高与隐身模式。</li>
+  <li>返回（go-back）/ 前进（forward-page）/ 重载标签页（reload-tab）：历史导航与刷新，无需配置。</li>
+  <li>关闭 标签页/窗口（close-tab）：关闭当前或按 URL 匹配的标签页、窗口，可选是否关闭全部窗口。</li>
+  <li>截屏（take-screenshot）：截取活动标签页画面，支持整页截取（fullPage）、按选择器只截取某元素，保存为 PNG（ext 默认 png），也可存入表格列。</li>
+  <li>浏览器事件（browser-event）：等待某个浏览器事件发生（如标签页加载完成 tab:loaded）后继续，默认超时 10000 毫秒。</li>
+  <li>处理对话框（handle-dialog）：自动接受或取消网页弹出的 alert、confirm、prompt 对话框。</li>
+  <li>处理下载（handle-download）：等待下载完成，可重命名文件；重名策略 onConflict 可选 唯一（uniquify）/覆盖（overwrite）/提示（prompt）。</li>
+  <li>代理（proxy）：设置浏览器代理（scheme/host/port/bypassList），内网环境一般无需使用。</li>
+  <li>Cookie（cookie）：获取、设置或移除 Cookie，支持 JSON 方式批量操作。</li>
+  <li>获取标签页 URL（tab-url）：读取当前活动或按条件匹配的标签页 URL，存入表格或变量。</li>
+</ul>
+
+<h3>网页交互</h3>
+<ul>
+  <li>点击元素（event-click）：点击匹配的元素。
+    <ul>
+      <li>selector：CSS 选择器（findBy 可切换为 XPath）。</li>
+      <li>multiple：勾选后点击全部匹配元素。</li>
+      <li>waitForSelector 与 waitSelectorTimeout：等待元素出现，默认 5000 毫秒。</li>
+    </ul>
+  </li>
+  <li>获取文本（get-text）：读取元素文本并存入表格或变量。
+    <ul>
+      <li>selector：CSS 选择器；multiple：勾选后抓取全部匹配元素。</li>
+      <li>dataColumn：目标列名，保存到表格时必填；saveData 默认开启（添加到表格）。</li>
+      <li>regex 与 regexExp：用正则过滤提取内容；prefixText/suffixText：前后缀拼接。</li>
+      <li>includeTags：是否包含 HTML 标签；assignVariable + variableName：改存为变量。</li>
+      <li>addExtraRow：额外追加一行说明（extraRowValue/extraRowDataColumn）。</li>
+    </ul>
+  </li>
+  <li>属性值（attribute-value）：读取或设置元素属性（action 为 get 或 set），例如批量读取链接的 href。</li>
+  <li>表单（forms）：操作输入框、下拉框、复选框、单选框。
+    <ul>
+      <li>type：元素类型（文本框、下拉框、复选框、单选框等）。</li>
+      <li>value：要填写的值；selectOptionBy：下拉框按 value 或按位置（optionPosition）选中。</li>
+      <li>clearValue：填前清空；delay：逐字输入延迟，模拟人工输入。</li>
+    </ul>
+  </li>
+  <li>按键（press-key）：向元素发送按键或组合键（keysToPress），如 Enter、Ctrl+A。</li>
+  <li>悬停元素（hover-element）：模拟鼠标悬停，用于触发悬停菜单。</li>
+  <li>链接（link）：点击链接元素，可设 openInNewTab 在新标签页打开。</li>
+  <li>滚动元素（element-scroll）：滚动页面或指定元素，可按像素（scrollX/scrollY）、增量滚动或滚动到某元素可见（scrollIntoView）。</li>
+  <li>触发器事件（trigger-event）：在元素上派发自定义 DOM 事件（eventName/eventType，如 input、change），用于框架需要事件才生效的场景。</li>
+  <li>切换框架（switch-to）：在主窗口与 iframe 之间切换操作上下文，操作 iframe 内元素前必须先切换。</li>
+  <li>上传文件（upload-file）：向 input type=file 元素上传本地文件（filePaths 列表）。</li>
+  <li>保存资源（save-assets）：下载元素或 URL 指向的图片、视频、文件到本地，可设 onConflict 重名策略。</li>
+  <li>创建元素（create-element）：向页面注入 HTML/CSS/JavaScript 片段（insertAt 决定插入位置）。</li>
+  <li>JavaScript 代码（javascript-code）：在网页上下文执行自定义 JS。
+    <ul>
+      <li>代码末尾调用 <code>automaNextBlock()</code> 进入下一块，默认模板即为示例。</li>
+      <li>timeout 默认 20000 毫秒；context 可选 website（页面内）或 background（扩展后台）。</li>
+      <li>everyNewTab 决定是否在每个新标签页都执行；runBeforeLoad 决定是否在页面脚本运行前执行。</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>条件与循环</h3>
+<ul>
+  <li>元素存在（element-exists）：检查元素是否存在，分「存在/不存在」两条出口。
+    <ul>
+      <li>tryCount：尝试次数（默认 1）；timeout：每次超时（默认 500 毫秒）。</li>
+      <li>throwError：不存在时是否直接报错，关闭后可作为流程分支使用。</li>
+    </ul>
+  </li>
+  <li>重复任务（repeat-task）：把后续路径重复执行 N 次（repeatFor）。
+    <ul>
+      <li>两条出口分别是「循环中」与「循环结束」，分页抓取最常用。</li>
+      <li>repeatFor 支持变量引用，可动态决定页数。</li>
+    </ul>
+  </li>
+  <li>循环数据（loop-data）：遍历数据源并逐项执行后续路径。
+    <ul>
+      <li>loopThrough 可选：数据列（data-columns）、数字范围（numbers，fromNumber 到 toNumber）、变量（variable）、自定义数据（custom-data，直接填 JSON 数组）、元素（elements）。</li>
+      <li>maxLoop 限制循环次数（0 为不限）；startIndex 起始索引；reverseLoop 反向循环。</li>
+      <li>每轮循环体内用 <code>{{loopData.循环ID.字段}}</code> 引用当前项。</li>
+    </ul>
+  </li>
+  <li>循环元素（loop-elements）：逐个遍历页面上匹配选择器的元素。
+    <ul>
+      <li>支持无限滚动加载（loadMoreAction，如点击加载更多按钮），适合瀑布流列表。</li>
+      <li>actionElSelector 可对每个元素内的子元素执行动作。</li>
+    </ul>
+  </li>
+  <li>循环断点（loop-breakpoint）：标记「循环数据」的结束位置，通过 loopId 与对应循环块关联；放在循环体末尾即可回到循环块进入下一轮。</li>
+  <li>条件循环（while-loop）：满足构建器条件时持续循环；条件值本身也可以是一段返回真假的后台代码。</li>
+  <li>条件构建器（conditionBuilder）：条件类块通用的比较器。
+    <ul>
+      <li>比较方式支持等于、不等于、大于、包含、匹配正则、为真值等十余种。</li>
+      <li>取值类型涵盖 值、代码、数据存在、元素文本、元素存在/可见/属性值。</li>
+      <li>内置身份证号、手机号、邮编、车牌、日期时间等常用中文场景正则模板，可直接选用。</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>数据</h3>
+<ul>
+  <li>插入数据（insert-data）：把数据插入表格或变量，支持从本地文件导入。
+    <ul>
+      <li>开启「文件」模式后填文件路径，可读取 xlsx/xls 与 csv（自动按扩展名识别，也可手动指定类型）。</li>
+      <li>Excel 支持指定工作表（xlsSheet）与单元格范围（xlsRange）；CSV 可按 JSON 或带表头解析。</li>
+      <li>需按提示授予扩展文件访问权限；目标可以是表格列，也可以是变量。</li>
+    </ul>
+  </li>
+  <li>删除数据（delete-data）：清空指定表格的全部行或删除指定变量。</li>
+  <li>获取日志数据（log-data）：读取某个工作流最近一次执行的日志数据，可存入表格或变量。</li>
+  <li>切片变量（slice-variable）：按起止索引截取变量值的一部分，例如取文件名扩展名。</li>
+  <li>增加变量（increase-variable）：把变量的数值增加指定数量（increaseBy，默认 1），常用于分页计数。</li>
+  <li>正则表达式变量（regex-variable）：对变量值做正则匹配（match）或替换（replace），支持标志位。</li>
+  <li>数据映射（data-mapping）：把表格或变量的字段映射成新的数据结构，用于整理导出前的数据。</li>
+  <li>排序数据（sort-data）：按属性对表格或变量数据排序。</li>
+</ul>
+
+<h2 id="sec6">6. 表格分页抓取模板<a class="back" href="#top">返回目录</a></h2>
+<p>模板按行采集分页表格，完成指定页数后导出 Excel 工作簿（xlsx）。末页不点击下一页，缺失字段留空，翻页超时明确报错。</p>
+<p>在管理页“工作流”列表导入 templates/表格分页抓取模板.json，修改“新建标签页”的 URL 和工作流“全局数据”。</p>
+<ul>
+<li><code>pageCount</code>：采集页数，正整数，默认 5。</li>
+<li><code>rowSelector</code>：行选择器，默认 .item。</li>
+<li><code>columns</code>：列名与行内 CSS 选择器的映射；修改列名时同步修改工作流表格列名。</li>
+<li><code>nextSelector</code>：下一页按钮选择器，默认 .next-page。</li>
+<li><code>pageMarkerSelector</code>：可选的页码/加载完成标记，留空时比较行内容。</li>
+<li><code>waitMs</code>：等待超时，1 到 60000 毫秒，默认 10000。</li>
+</ul>
+<p class="flow">触发器 → 新建标签页 → 初始化 → 重复任务 → 按行采集 → 条件循环判断末页；未到末页时点击下一页并等待变化，再回到重复任务；采集完成后导出 xlsx。</p>
+<p>每页条数可以不同。翻页后要求内容或标记变化并保持 400 毫秒稳定；分批加载较慢的网站需配置可靠的加载完成标记或调整等待代码。相邻页内容相同则需配置变化的页码标记。页数超出实际范围或内容未更新时，不导出本次部分结果。</p>
+<p>模板默认查询当前网页文档；iframe、Shadow DOM、虚拟列表需针对页面调整。完整配置示例见项目 templates/README.md。</p>
+
+<h2 id="sec7">7. 数据导出<a class="back" href="#top">返回目录</a></h2>
+<p>export-data 块支持的导出格式（以源码 dataExportTypes 为准，共 4 种）：</p>
+<ul>
+  <li>Excel 工作簿（xlsx）：生成新的工作簿文件，保持二维数组的行列，标量数组使用 value 列。</li>
+  <li>JSON（json）：结构化数据，便于程序处理或再导入其他工具。</li>
+  <li>CSV（csv）：表格数据，Excel/WPS 可直接打开。CSV 专属选项：
+    <ul>
+      <li>BOM 头（addBOMHeader，默认开启）：在文件头加入 UTF-8 BOM，避免 Excel 以错误编码打开导致中文乱码。</li>
+      <li>分隔符（csvDelimiter，默认逗号）：可改为制表符、分号等，适配不同办公软件。</li>
+    </ul>
+  </li>
+  <li>纯文本（plain-text）：每行一条记录的纯文本。</li>
+</ul>
+<p>其他关键参数：</p>
+<ul>
+  <li>导出内容（dataToExport）：数据列（data-columns，导出整个表格）或变量（variable，导出指定变量，需填变量名）。</li>
+  <li>文件名（name）：支持变量引用，例如按日期命名 <code>{{$date(YYYY-MM-DD)}}-抓取结果</code>。</li>
+  <li>重名策略（onConflict）：唯一（uniquify，自动追加序号）、覆盖（overwrite，替换同名文件）、提示（prompt，弹窗询问）。</li>
+</ul>
+<p>执行历史导出：</p>
+<ul>
+  <li>在管理页「日志」中打开某次执行记录，其中的数据表支持导出为 xlsx、JSON、CSV、纯文本。</li>
+  <li>适合把某次定时任务的结果单独归档留存。</li>
+</ul>
+<p>关于 Excel（xlsx）：</p>
+<ul>
+  <li>导出 xlsx 生成新文件，不修改来源工作簿。嵌套对象/数组保存为 JSON 文本，空值保留为空单元格。</li>
+  <li>工作表名会自动净化并限制为 31 字符。「插入数据」仍用于读取 Excel 后写入内部表格/变量（见第 5 节数据类）。</li>
+</ul>
+<p>CSV 用 Excel 打开乱码时：</p>
+<ul>
+  <li>确认导出数据块中「BOM 头」已勾选后重新执行即可。</li>
+  <li>已生成的旧文件可用 Excel 的「数据 → 从文本导入」手动指定 UTF-8 编码打开。</li>
+</ul>
+
+<h2 id="sec8">8. 导入导出与加密备份<a class="back" href="#top">返回目录</a></h2>
+<p>工作流级导入导出：</p>
+<ul>
+  <li>导入：管理页「工作流」右上角「导入」，选择 .json 工作流文件，可一次导入多个。</li>
+  <li>导出：在工作流卡片菜单或编辑器的动作菜单中选择导出，得到 .json 文件，可在内网同事间分发复用。</li>
+  <li>导出文件不含执行日志与表格数据，仅含工作流定义。</li>
+</ul>
+<p>完整本地备份与恢复（管理页「设置」→「备份」）：</p>
+<ul>
+  <li>创建备份：可选设置备份／恢复密码，点击创建，得到包含全部工作流、表格数据、设置与凭据的完整备份文件。</li>
+  <li>恢复：点击「选择文件并恢复」，选择备份文件。恢复前会检查密码、文件格式和关联关系，并自动保存恢复前快照；恢复失败自动回滚，不会丢一半数据。</li>
+  <li>恢复期间工作流执行被暂时阻塞（门控机制），请先停止正在运行的工作流再恢复；支持旧版导出格式，但旧文件未保存的表格行数据无法补回。</li>
+  <li>加密备份说明：
+    <ul>
+      <li>备份时若设置了密码，整个备份文件使用 AES 加密（配合 HMAC-SHA256 完整性校验），密码不写入文件，遗失密码将无法恢复，请妥善保管。</li>
+      <li>含凭据或受密码保护的工作流时必须设置密码。</li>
+      <li>还支持定时备份（本地备份计划，可设计划周期与文件夹名），可选择「加密定时备份」；加密密码只保留在当前浏览器会话，重启浏览器后需重新输入并启用。</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="sec9">9. 定时任务<a class="back" href="#top">返回目录</a></h2>
+<p>在触发器块的设置中「编辑触发器」添加或修改触发类型即可创建定时任务：</p>
+<ul>
+  <li>间隔（interval）：每隔 N 分钟执行一次（interval 单位为分钟，默认 60）；可设首次延迟（delay，分钟）；fixedDelay 表示按固定间隔（上一次执行完再计时）。</li>
+  <li>Cron 任务（cron-job）：填写标准 5 段式 cron 表达式（分 时 日 月 周），按表达式计算下次执行时间；表达式非法时定时不会注册。
+    <ul>
+      <li>示例：<code>0 8 * * 1-5</code> 表示每个工作日早上 8 点执行；<code>*/30 * * * *</code> 表示每 30 分钟执行。</li>
+      <li>注意 cron 的时区为系统本地时区，跨时区环境需自行换算。</li>
+    </ul>
+  </li>
+  <li>在特定日期（date）：指定某一天的具体时间执行一次，时间已过则不再触发。</li>
+  <li>在特定的星期几（specific-day）：选择星期几与时间，每周在指定时间执行。</li>
+  <li>浏览器启动时（on-startup）：浏览器启动时执行，适合做开机后的例行采集。</li>
+</ul>
+<p>重要限制（以源码 workflowTrigger.js 为准）：</p>
+<ul>
+  <li>本版所有定时类型都基于浏览器 alarms API 实现：interval 使用 periodInMinutes，cron、date、specific-day 先计算下一次时间点再用 when 注册，到点后自动重排下一次。</li>
+  <li>因此定时任务只在浏览器保持运行时才会触发；浏览器可以最小化，但进程不能退出。浏览器关闭期间错过的执行不会补跑。</li>
+  <li>Chromium 90 下 alarms 最小间隔为 1 分钟，设置更短的间隔会被浏览器强制提升到 1 分钟。</li>
+  <li>定时执行的历史同样记录在「日志」页，排查定时问题先看日志是否有记录。</li>
+</ul>
+
+<h2 id="sec10">10. 常见问题<a class="back" href="#top">返回目录</a></h2>
+<p>元素选择器失败怎么办：</p>
+<ol>
+  <li>按 Alt+P 重新框选目标元素，优先选用包含稳定 class 或 id 的节点，避免自动生成过长的绝对路径。</li>
+  <li>手动改写更稳定的 CSS 选择器，例如用列表结构定位（<code>#list tr:nth-child(2) td.title</code>）代替依赖层级的写法。</li>
+  <li>页面加载慢时勾选块的「等待选择器出现」（waitForSelector）并加大等待时间（waitSelectorTimeout，默认 5000 毫秒）。</li>
+  <li>元素在 iframe 内时，先用「切换框架」块（switch-to）进入对应框架再操作。</li>
+  <li>动态渲染的内容可在操作前加「延迟」块，或用「元素存在」块设置多次尝试。</li>
+  <li>页面结构不固定时，用「元素存在」块分「存在/不存在」两条出口做兜底处理。</li>
+</ol>
+<p>执行超时：</p>
+<ul>
+  <li>每个块可在其设置中配置「块超时」（blockTimeout，毫秒）。设置后该块超过时限会报「节点执行超时，操作结果未知；请确认页面状态后再运行」。</li>
+  <li>不设置则没有统一的全局块超时，卡住多由等待元素或等待下载引起，应检查选择器与超时参数。</li>
+  <li>若干块有各自的默认超时：JavaScript 代码块 20000 毫秒、处理下载块 20000 毫秒、浏览器事件块与等待连接块 10000 毫秒、参数提示块 60000 毫秒。</li>
+</ul>
+<p>下载文件在哪：</p>
+<ul>
+  <li>export-data、保存资源、处理下载等块生成的文件保存在浏览器的默认下载目录。</li>
+  <li>重名处理由 onConflict 决定：唯一（uniquify）自动追加序号、覆盖（overwrite）替换同名文件、提示（prompt）弹窗询问。</li>
+  <li>若浏览器设置中开启了「下载前询问保存位置」，会先弹窗再保存，无人值守的定时任务建议关闭该选项。</li>
+</ul>
+<p>变量语法在哪些输入框可用：</p>
+<ul>
+  <li>变量引用（mustache 模板，实现在 workflowEngine/templating）只对每个块声明了 refDataKeys 的字段生效，例如新建标签页的 URL 与 userAgent、获取文本的选择器与前后缀、导出数据的文件名等；未声明的输入框不会做替换。</li>
+  <li>常用表达式（以下均已核实支持）：
+    <ul>
+      <li><code>{{variables.变量名}}</code>：取工作流变量。</li>
+      <li><code>{{globalData.路径}}</code>：取工作流全局数据的某个字段；<code>{{globalData}}</code> 取整体。</li>
+      <li><code>{{table.列名}}</code>：取表格第 1 行该列的值；<code>{{table.2.列名}}</code> 取第 3 行（索引从 0 起）；<code>{{table.$last.列名}}</code> 取最后一行。</li>
+      <li><code>{{dataColumn.列名}}</code> 与 <code>{{dataColumns.列名}}</code>：与 table 等价的别名写法。</li>
+      <li><code>{{loopData.循环ID.字段}}</code>：在循环体内取当前项字段；<code>{{loopData.循环ID.$index}}</code> 取当前索引（循环 ID 在循环数据块的 loopId 中查看）。</li>
+      <li><code>{{secrets.名称}}</code>：读取凭据值（自动解密）。</li>
+    </ul>
+  </li>
+  <li>键名与路径之间用点号或 @ 分隔均可，如 <code>{{variables.名}}</code> 与 <code>{{variables@名}}</code> 等效。</li>
+  <li>内置函数：在花括号内以 $ 开头调用，如 <code>{{$date(YYYY-MM-DD)}}</code>（当前日期，支持 relative、timestamp）、<code>{{$randint(0,100)}}</code>（随机整数）、<code>{{$getLength(值)}}</code>（长度）、<code>{{$slice(值,起始,结束)}}</code>（截取）、<code>{{$increment(值,1)}}</code> 与 <code>{{$subtract(值,1)}}</code>（加减）、<code>{{$multiply(值,倍数)}}</code> 与 <code>{{$divide(值,除数)}}</code>、<code>{{$modulo(值,除数)}}</code>、<code>{{$replace(值,旧,新)}}</code> 与 <code>{{$replaceAll(值,旧,新)}}</code>、<code>{{$toLowerCase(值)}}</code> 与 <code>{{$toUpperCase(值)}}</code>、<code>{{$randData(?l?u?d?s?a)}}</code>（按模板生成随机字符串）、<code>{{$filter(数据,jsonpath)}}</code>（JSONPath 过滤）、<code>{{$stringify(值)}}</code>（转 JSON）。</li>
+  <li>JavaScript 表达式：让整个输入值以 !! 开头，后接花括号包裹的表达式，表达式在扩展沙箱中求值，例如 <code>!!{{variables.count + 1}}</code>；表达式内用点号引用数据（variables.count、table.列名）。</li>
+  <li>强制序列化：数据键前加 ! 表示把结果强制转为 JSON 字符串，例如 <code>{{!variables.对象}}</code>。</li>
+</ul>
+<p>内网使用注意：</p>
+<ul>
+  <li>工作流流程本身不会外联：所有块都在本地执行，抓取与导出均落在本机；请勿在流程中使用「HTTP 请求」（webhook）块连接外部地址。</li>
+  <li>全部数据（工作流、表格、日志、备份前快照）保存在本机浏览器的 IndexedDB（Dexie）与 storage.local 中，卸载浏览器或清理站点数据会删除这些内容。</li>
+  <li>传递文件请使用扩展的导入导出与备份文件，不要借助任何在线同步服务。</li>
+  <li>定期备份：建议每周在「设置 → 备份」中创建一次完整备份，重要表格数据导出 CSV 留存。</li>
+</ul>
+
+<h2 id="sec11">11. 故障排查<a class="back" href="#top">返回目录</a></h2>
+<p>日志页在哪看：</p>
+<ul>
+  <li>管理页左侧边栏点「日志」图标（历史时钟图标），按工作流分组查看执行历史；有工作流正在运行时侧栏图标上会显示圆点数字。</li>
+  <li>每条记录可展开查看执行过的块、每个块的状态与耗时、报错信息以及本次抓取到的数据。</li>
+</ul>
+<p>执行历史保留策略（管理页「设置」）：</p>
+<ul>
+  <li>保留天数（deleteLogAfter）：默认 30 天，可选 永不、7、14、30、60、120 天，到期自动清理。</li>
+  <li>数量上限（logsLimit）：默认 1000 条，最小 10 条，超出后旧记录被清理。</li>
+  <li>日志数据存储在本地 IndexedDB 的 logs 库中（logs 与 logsData 两张表），手动删除单条或清空后不可恢复，重要数据请先导出。</li>
+</ul>
+<p>常见报错含义：</p>
+<ul>
+  <li>元素未找到（element-not-found）：选择器没有匹配到元素。检查选择器写法、页面是否加载完成、元素是否在 iframe 内。</li>
+  <li>节点执行超时，操作结果未知；请确认页面状态后再运行：块设置了 blockTimeout 且执行超过时限，先人工确认页面状态再重跑。</li>
+  <li>没有可用标签页（no-tab）或无效的活动标签页（invalid-active-tab）：目标标签页已被关闭；在流程中用「新建标签页」或「切换标签页」重新定位。</li>
+  <li>没有匹配的标签页（no-match-tab）：切换标签页块的匹配条件没有命中任何标签页，检查 matchPattern 写法。</li>
+  <li>无效的请求体（invalid-body）：HTTP 请求块或参数格式错误（内网环境一般不使用该块）。</li>
+  <li>触发器不执行：依次检查——触发类型是否不是「手动」、浏览器是否在运行（定时依赖 alarms，关掉浏览器不会补跑）、工作流是否被停用、cron 表达式是否合法。</li>
+  <li>执行被阻塞：若刚做过备份恢复，恢复门控尚未解除，重启浏览器或等待恢复完成后重试。</li>
+  <li>快捷键无效：检查是否与其他扩展或系统快捷键冲突，在扩展管理页「键盘快捷方式」中重新绑定。</li>
+</ul>
+
+<footer class="doc-footer">
+  <p>自动化工具 v1.28.27 中文离线定制版 · 本手册依据扩展源码核实编写，可在内网离线阅读与打印。</p>
+</footer>
+
+</div>
+</body>
+</html>

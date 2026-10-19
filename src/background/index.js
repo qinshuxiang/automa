@@ -78,7 +78,11 @@ message.on('fetch', async ({ type, resource }) => {
   return result;
 });
 message.on('fetch:text', (url) => {
-  return fetch(url).then((response) => response.text());
+  return fetch(url).then((response) => {
+    if (!response.ok) throw new Error(response.statusText);
+
+    return response.text();
+  });
 });
 
 message.on('open:dashboard', (url) => BackgroundUtils.openDashboard(url));

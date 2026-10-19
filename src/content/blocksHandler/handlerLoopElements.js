@@ -21,9 +21,7 @@ function getScrollParent(node) {
   );
 }
 function excludeSelector({ type, selector, loopAttr }) {
-  if (type === 'cssSelector') {
-    return `${selector}:not([automa-loop*="${loopAttr}"])`;
-  }
+  if (type !== 'xpath') return selector;
 
   // XPath 循环：排除条件使用当前真实 loopAttr（剔除引号），不再硬编码
   return `${selector}[not(contains(@automa-loop, '${String(loopAttr).replace(
@@ -32,99 +30,104 @@ function excludeSelector({ type, selector, loopAttr }) {
   )}'))]`;
 }
 
-export default async function ({ data, id }) {
-  try {
-    let frameSelector = '';
-    if (data.$frameSelector) {
-      frameSelector = `${data.$frameSelector} |> `;
+export default async function ({
+  data,
+  id,
+  frameSelector: currentFrame,
+  signal,
+}) {
+  let frameSelector = '';
+  if (data.$frameSelector) {
+    frameSelector = `${data.$frameSelector} |> `;
+  }
+
+  const generateItemsSelector = (elements) => {
+    const selectors = generateLoopSelectors(elements, {
+      frameSelector,
+      attrId: data.loopAttrId,
+      startIndex: data.index + 1,
+    });
+
+    return selectors;
+  };
+  const getNewElementsOptions = {
+    id,
+    frameSelector: currentFrame,
+    signal,
+    data: {
+      multiple: true,
+      excludeLoop: data.loopAttrId,
+      findBy: data.findBy,
+      waitForSelector: true,
+      waitSelectorTimeout: data.actionElMaxWaitTime * 1000,
+      selector: excludeSelector({
+        type: data.findBy,
+        selector: data.selector,
+        loopAttr: data.loopAttrId,
+      }),
+    },
+  };
+  let elements = null;
+
+  if (data.type.includes('scroll')) {
+    const loopItems = document.querySelectorAll(
+      `[automa-loop*="${data.loopAttrId}"]`
+    );
+    if (loopItems.length === 0) return { continue: true };
+
+    const scrollableParent = getScrollParent(loopItems[0]);
+    if (!scrollableParent) return { continue: true };
+
+    if (data.scrollToBottom) {
+      const { scrollHeight } = scrollableParent;
+      scrollableParent.scrollTo(
+        0,
+        data.type === 'scroll-up' ? 0 : scrollHeight + 30
+      );
+    } else if (data.type === 'scroll-up') {
+      const [firstElement] = loopItems;
+      firstElement.scrollIntoView();
+    } else {
+      const lastElement = loopItems[loopItems.length - 1];
+      lastElement.scrollIntoView();
     }
 
-    const generateItemsSelector = (elements) => {
-      const selectors = generateLoopSelectors(elements, {
-        frameSelector,
-        attrId: data.loopAttrId,
-        startIndex: data.index + 1,
-      });
+    await sleep(500);
 
-      return selectors;
-    };
-    const getNewElementsOptions = {
+    elements = await handleSelector(getNewElementsOptions);
+  } else if (['click-element', 'click-link'].includes(data.type)) {
+    const elementForLoad = await handleSelector({
       id,
+      frameSelector: currentFrame,
+      signal,
       data: {
-        multiple: true,
-        findBy: data.findBy,
         waitForSelector: true,
-        waitSelectorTimeout: data.actionElMaxWaitTime * 1000,
-        selector: excludeSelector({
-          type: data.findBy,
-          selector: data.selector,
-          loopAttr: data.loopAttrId,
-        }),
+        waitSelectorTimeout: 2000,
+        selector: data.actionElSelector,
+        findBy: isXPath(data.actionElSelector) ? 'xpath' : 'cssSelector',
       },
-    };
-    let elements = null;
+    });
+    if (!elementForLoad) return { continue: true };
 
-    if (data.type.includes('scroll')) {
-      const loopItems = document.querySelectorAll(
-        `[automa-loop*="${data.loopAttrId}"]`
-      );
-      if (loopItems.length === 0) return { continue: true };
-
-      const scrollableParent = getScrollParent(loopItems[0]);
-      if (!scrollableParent) return { continue: true };
-
-      if (data.scrollToBottom) {
-        const { scrollHeight } = scrollableParent;
-        scrollableParent.scrollTo(
-          0,
-          data.type === 'scroll-up' ? 0 : scrollHeight + 30
-        );
-      } else if (data.type === 'scroll-up') {
-        const [firstElement] = loopItems;
-        firstElement.scrollIntoView();
-      } else {
-        const lastElement = loopItems[loopItems.length - 1];
-        lastElement.scrollIntoView();
-      }
-
+    if (data.type === 'click-element') {
+      simulateClickElement(elementForLoad);
       await sleep(500);
 
       elements = await handleSelector(getNewElementsOptions);
-    } else if (['click-element', 'click-link'].includes(data.type)) {
-      const elementForLoad = await handleSelector({
-        id,
-        data: {
-          waitForSelector: true,
-          waitSelectorTimeout: 2000,
-          selector: data.actionElSelector,
-          findBy: isXPath(data.actionElSelector),
-        },
-      });
-      if (!elementForLoad) return { continue: true };
+    } else {
+      if (data.onlyClickLink) {
+        if (elementForLoad.tagName !== 'A' || !elementForLoad.href)
+          return { continue: true };
 
-      if (data.type === 'click-element') {
-        simulateClickElement(elementForLoad);
-        await sleep(500);
+        window.location.href = elementForLoad.href;
 
-        elements = await handleSelector(getNewElementsOptions);
-      } else {
-        if (data.onlyClickLink) {
-          if (elementForLoad.tagName !== 'A' || !elementForLoad.href)
-            return { continue: true };
-
-          window.location.href = elementForLoad.href;
-
-          return {};
-        }
-        elements = await handleSelector(getNewElementsOptions);
+        return {};
       }
+      elements = await handleSelector(getNewElementsOptions);
     }
-
-    if (!elements) return { continue: true };
-
-    return generateItemsSelector(elements);
-  } catch (error) {
-    console.error(error);
-    return { continue: true };
   }
+
+  if (!elements) return { continue: true };
+
+  return generateItemsSelector(elements);
 }

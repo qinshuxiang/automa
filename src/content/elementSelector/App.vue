@@ -364,6 +364,10 @@ function saveSelector() {
   clearConnectedPort();
   destroy();
 }
+function openSelector() {
+  state.hide = false;
+  rootElement.style.display = 'block';
+}
 function attachListeners() {
   cardElementObserver.observe(cardEl.value);
 
@@ -422,8 +426,10 @@ onMounted(() => {
   }, 500);
 
   attachListeners();
+  window.addEventListener('automa:open-element-selector', openSelector);
 });
 onBeforeUnmount(() => {
+  window.removeEventListener('automa:open-element-selector', openSelector);
   detachListeners();
 });
 </script>

@@ -8,8 +8,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const env = require('./utils/env');
+const pkg = require('./package.json');
 
 const ASSET_PATH = process.env.ASSET_PATH || '/';
+const buildPath = path.resolve(
+  __dirname,
+  process.env.AUTOMA_OUTPUT_DIR || 'build'
+);
 
 const alias = {
   '@': path.resolve(__dirname, 'src/'),
@@ -72,8 +77,12 @@ const options = {
       'elementSelector',
     ],
   },
+  // 构建缺陷修复：webpack 默认以 process.cwd() 作为模块解析基准，
+  // 从仓库其他目录执行构建时会报 "Can't resolve loader"；
+  // 固定为配置文件所在目录，使构建不依赖调用位置。
+  context: __dirname,
   output: {
-    path: path.resolve(__dirname, 'build'),
+    path: buildPath,
     filename: '[name].bundle.js',
     publicPath: ASSET_PATH,
   },
@@ -148,15 +157,20 @@ const options = {
     new webpack.EnvironmentPlugin(['NODE_ENV']),
     new CopyWebpackPlugin({
       patterns: [
+        { from: 'src/assets/fonts/NotoSansCJK-OFL.txt', to: buildPath },
         {
           from: `src/manifest.${env.BROWSER}.json`,
-          to: path.join(__dirname, 'build', 'manifest.json'),
+          to: path.join(buildPath, 'manifest.json'),
           force: true,
           toType: 'file',
           transform(content) {
             const manifestObj = {
-              description: process.env.npm_package_description,
-              version: process.env.npm_package_version,
+              // 构建缺陷修复：npm_package_* 环境变量只在 npm/yarn script 中存在，
+              // 直接 node utils/build.js 时为 undefined 会导致 manifest transform
+              // 崩溃且产物被静默抑制；回退到 package.json 保证两种入口一致。
+              description:
+                process.env.npm_package_description || pkg.description,
+              version: process.env.npm_package_version || pkg.version,
               ...JSON.parse(content.toString()),
             };
             const isChrome = env.BROWSER === 'chrome';
@@ -177,13 +191,19 @@ const options = {
         },
         {
           from: 'src/assets/images/icon-128.png',
-          to: path.join(__dirname, 'build'),
+          to: buildPath,
           force: true,
         },
         {
           // Chromium 90 文件选择器垫片：manifest.background.scripts 第一个加载
           from: 'src/async-lifecycle.js',
-          to: path.join(__dirname, 'build'),
+          to: buildPath,
+          force: true,
+        },
+        {
+          // 离线中文使用手册：帮助链接本地化后 UI 引用包内 docs/使用手册.html
+          from: 'docs',
+          to: path.join(buildPath, 'docs'),
           force: true,
         },
       ],

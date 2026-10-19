@@ -66,6 +66,12 @@
       </div>
     </template>
     <template #footer-content>
+      <span
+        v-if="collectUnsupportedBlocks(workflow).length"
+        class="text-red-500"
+      >
+        含不支持的云端节点，无法执行
+      </span>
       <v-remixicon
         v-if="isShared"
         v-tooltip:bottom.group="
@@ -90,6 +96,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 import SharedCard from '@/components/newtab/shared/SharedCard.vue';
+import { collectUnsupportedBlocks } from '@/utils/workflowValidation';
 
 defineProps({
   workflow: {

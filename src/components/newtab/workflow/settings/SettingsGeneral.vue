@@ -40,11 +40,7 @@
         minutes)
       </p>
     </div>
-    <a
-      href="https://docs.automa.site/workflow/settings.html#workflow-execution"
-      class="mr-2"
-      target="_blank"
-    >
+    <a href="docs/使用手册.html#sec5" class="mr-2" target="_blank">
       <v-remixicon name="riInformationLine" />
     </a>
     <ui-select
@@ -131,7 +127,7 @@
       </p>
     </div>
     <a
-      href="https://docs.automa.site/blocks/trigger.html#trigger-using-js-customevent"
+      href="docs/使用手册.html#sec5"
       target="_blank"
       rel="noopener"
       class="mr-2 text-gray-600 dark:text-gray-200"

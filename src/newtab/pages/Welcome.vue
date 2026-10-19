@@ -69,7 +69,7 @@ const links = [
   {
     name: t('common.docs'),
     icon: 'riBook3Line',
-    url: 'https://docs.automa.site',
+    url: 'docs/使用手册.html#top',
   },
   {
     name: t('welcome.marketplace'),

@@ -209,20 +209,26 @@ class BackgroundWorkflowTriggers {
       }
 
       if (triggerBlock) {
-        if (isStartup && triggerBlock.type === 'on-startup') {
-          executeWorkflow(currWorkflow);
-        } else {
-          if (isStartup && triggerBlock.triggers) {
-            for (const trigger of triggerBlock.triggers) {
-              if (trigger.type === 'on-startup') {
-                await BackgroundWorkflowUtils.executeWorkflow(currWorkflow);
+        try {
+          if (isStartup && triggerBlock.type === 'on-startup') {
+            executeWorkflow(currWorkflow);
+          } else {
+            if (isStartup && triggerBlock.triggers) {
+              for (const trigger of triggerBlock.triggers) {
+                if (trigger.type === 'on-startup') {
+                  await BackgroundWorkflowUtils.executeWorkflow(currWorkflow);
+                }
               }
             }
-          }
 
-          await registerWorkflowTrigger(currWorkflow.id, {
-            data: triggerBlock,
-          });
+            await registerWorkflowTrigger(currWorkflow.id, {
+              data: triggerBlock,
+            });
+          }
+        } catch (error) {
+          // 单个工作流的触发器数据畸形不能中断其余工作流的注册，
+          // 否则排在其后的定时触发器当日静默失效
+          console.error(`注册工作流触发器失败（${currWorkflow.id}）:`, error);
         }
       }
     }

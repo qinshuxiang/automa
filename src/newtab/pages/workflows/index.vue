@@ -316,9 +316,7 @@
           </ol>
           <p class="mt-4">
             Learn more about recording in
-            <a
-              href="https://docs.automa.site/guide/quick-start.html#recording-actions"
-              target="_blank"
+            <a href="docs/使用手册.html#sec4" target="_blank"
               >the documentation</a
             >
           </p>
